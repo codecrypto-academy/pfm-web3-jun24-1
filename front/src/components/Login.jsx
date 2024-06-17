@@ -1,7 +1,32 @@
 import "../index.css";
 import { Typewriter } from "react-simple-typewriter";
+import { useForm } from "../hook/useForm";
+import { useNavigate } from "react-router-dom";
 
 export function Login() {
+  const navigate = useNavigate();
+
+  const { name, rol, password, onInputChange, onResetForm } = useForm({
+    name: "",
+    rol: "",
+    password: "",
+  });
+
+  const onLogin = (e) => {
+    e.preventDefault();
+    //Si el usuario se logea, le redirigimos al dashborad
+    navigate("/dashboard", {
+      replace: true,
+      state: {
+        //Indicamos que esta logeado
+        logged: true,
+        name,
+        rol
+      },
+    });
+    onResetForm();
+  };
+
   return (
     <div className="page-container">
       <div>
@@ -31,25 +56,58 @@ export function Login() {
           </h1>
         </div>
         <div>
-            <p className="fixed-text">Compra y vende fácilmente con un solo click <br /> Sin intermediarios</p>
+          <p className="fixed-text">
+            Compra y vende fácilmente con un solo click <br /> Sin
+            intermediarios
+          </p>
         </div>
       </div>
       <div className="form-container">
         <div className="container">
-          <form action="#">
+          <form onSubmit={onLogin}>
             <h1>Login</h1>
             <div className="input-box">
-              <input type="text" placeholder="username" required />
+              <input
+                type="text"
+                placeholder="username"
+                name="name"
+                id="name"
+                value={name}
+                onChange={onInputChange}
+                autoComplete="off"
+                required
+              />
             </div>
             <div className="input-box">
-              <input type="password" placeholder="password" required />
+              <input
+                type="text"
+                placeholder="rol"
+                name="rol"
+                id="rol"
+                value={rol}
+                onChange={onInputChange}
+                autoComplete="off"
+                required
+              />
+            </div>
+            <div className="input-box">
+              <input
+                type="password"
+                placeholder="password"
+                name="password"
+                id="password"
+                value={password}
+                onChange={onInputChange}
+                autoComplete="off"
+                required
+              />
             </div>
             <button type="submit" className="btn">
               Log in
             </button>
             <div className="register-link">
               <p>
-                ¿No tienes una cuenta? <a href="#">Regístrate aquí</a>
+                ¿No tienes una cuenta? <a href="/register">Regístrate aquí</a>
               </p>
             </div>
           </form>
