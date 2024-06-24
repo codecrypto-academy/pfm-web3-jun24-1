@@ -14,16 +14,32 @@ export function Login() {
 
   const onLogin = (e) => {
     e.preventDefault();
-    //Si el usuario se logea, le redirigimos al dashborad
-    navigate("/dashboard", {
+  
+    let dashboardRoute = ""; // Ruta por defecto
+    
+    switch (rol) {
+      case "agricultor":
+        dashboardRoute = "/dashboardAgr";
+        break;
+      case "fabricante":
+        dashboardRoute = "/dashboardFabr";
+        break;
+      case "cliente":
+        dashboardRoute = "/dashboardClient";
+        break;
+      default:
+        dashboardRoute = "/dashboard";
+    }
+  
+    navigate(dashboardRoute, {
       replace: true,
       state: {
-        //Indicamos que esta logeado
         logged: true,
         name,
         rol
       },
     });
+    
     onResetForm();
   };
 
