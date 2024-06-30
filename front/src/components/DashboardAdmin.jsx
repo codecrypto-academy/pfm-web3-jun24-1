@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-export function DashboardAgr() {
+export function DashboardAdmin() {
   const [selectedRow, setSelectedRow] = useState(null);
-  console.log("Agricultor");
+  console.log("Admin");
 
   const handleRowSelection = (index) => {
     setSelectedRow(index);
@@ -81,7 +81,7 @@ export function DashboardAgr() {
           <div className="row">
             <div className="col">
               <div className="mb-3">
-                <label for="nombreProducto" className="form-label">
+                <label htmlFor="nombreProducto" className="form-label">
                   Nombre del producto:
                 </label>
                 <input
@@ -95,7 +95,7 @@ export function DashboardAgr() {
 
             <div className="col">
               <div className="mb-3">
-                <label for="cantidad" className="form-label">
+                <label htmlFor="cantidad" className="form-label">
                   Cantidad:
                 </label>
                 <input
@@ -109,7 +109,7 @@ export function DashboardAgr() {
 
             <div className="col">
               <div className="mb-3">
-                <label for="unidad" className="form-label">
+                <label htmlFor="unidad" className="form-label">
                   Seleccione unidad:
                 </label>
                 <select className="form-select" id="unidad">
@@ -134,7 +134,7 @@ export function DashboardAgr() {
         <h1 className="title-dashboard mb-3">TRANSFERIR</h1>
         <div className="mt-3 text-center">
                 <div className="mb-3">
-                  <label for="exampleLabel" className="form-label">Seleccione un token a transferir:</label>
+                  <label htmlFor="exampleLabel" className="form-label">Seleccione un token a transferir:</label>
                 </div>
                 <button type="button" className="btn btn-primary">Transferir</button>
               </div>

@@ -1,34 +1,41 @@
-import "../index.css";
-import { Typewriter } from "react-simple-typewriter";
+import { Typewriter } from 'react-simple-typewriter';
 import { useForm } from '../hook/useForm';
-import { useNavigate } from "react-router-dom";
-import axios from 'axios';
+import { ethers } from 'ethers';
+import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json'; // Ajusta la ruta según donde tengas el archivo JSON
+
+const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Reemplaza con la dirección del contrato en tu red local
+
 
 export function Register() {
-    const navigate = useNavigate();
-    const { account, address, name, role, password, onInputChange, onResetForm } = useForm({
-        account: '',
-        address: '',
-        name: '',
-        role: '',
-        password: '',
+    const { address, name, role, password, onInputChange, onResetForm } = useForm({
+        address: "",
+        name: "",
+        role: "",
+        password: "",
     });
+
+    const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545"); // Configura el proveedor para la red local de Hardhat
+    const signer = provider.getSigner(); // Obtén el signer (cuenta) para enviar transacciones
+
+    const userStorageContract = new ethers.Contract(contractAddress, contractABI.abi, signer);
 
     const onRegister = async (e) => {
         e.preventDefault();
 
-        const userData = {
-            account: address,
-            username: name,
-            role: role,
-            password: password
-        };
-
         try {
-            await axios.post('http://localhost:3000/register', userData);
-            console.log('Usuario registrado en la blockchain');
-            onResetForm();
-            navigate('/dashboard'); // Redirigir al dashboard después del registro
+            // Envía la transacción al contrato para registrar un usuario
+            const tx = await userStorageContract.registerUser(
+                address,
+                name,
+                role,
+                password
+            );
+
+            // Espera a que la transacción se confirme
+            await tx.wait();
+
+            console.log("Usuario registrado en la blockchain");
+            onResetForm();// Redirigir al dashboard después del registro
         } catch (error) {
             console.error("Error al registrar usuario:", error);
         }
@@ -43,13 +50,13 @@ export function Register() {
                         <span className="spanTypewritter">
                             <Typewriter
                                 words={[
-                                    " agricultor",
-                                    " ganadero",
-                                    " comerciante",
-                                    " emprendedor",
-                                    " artesano",
-                                    " diseñador/a de moda",
-                                    " escritor",
+                                    ' agricultor',
+                                    ' ganadero',
+                                    ' comerciante',
+                                    ' emprendedor',
+                                    ' artesano',
+                                    ' diseñador/a de moda',
+                                    ' escritor',
                                 ]}
                                 loop={true}
                                 cursor
@@ -57,13 +64,15 @@ export function Register() {
                                 typeSpeed={70}
                                 deleteSpeed={50}
                                 delaySpeed={1000}
-                                textAlign="left" // Alinear el Typewriter a la izquierda
+                                textAlign="left"
                             />
                         </span>
                     </h1>
                 </div>
                 <div>
-                    <p className="fixed-text">Compra y vende fácilmente con un solo click <br /> Sin intermediarios</p>
+                    <p className="fixed-text">
+                        Compra y vende fácilmente con un solo click <br /> Sin intermediarios
+                    </p>
                 </div>
             </div>
             <div className="form-container">
@@ -71,25 +80,56 @@ export function Register() {
                     <form onSubmit={onRegister}>
                         <h1>Regístrate</h1>
                         <div className="input-box">
-                            <input type="text" placeholder="address" name='address' id='address' value={address} onChange={onInputChange} autoComplete="off" required />
+                            <input
+                                type="text"
+                                placeholder="address"
+                                name="address"
+                                id="address"
+                                value={address}
+                                onChange={onInputChange}
+                                autoComplete="off"
+                                required
+                            />
                         </div>
                         <div className="input-box">
-                            <input type="text" placeholder="username" name='name' id='name' value={name} onChange={onInputChange} autoComplete="off" required />
+                            <input
+                                type="text"
+                                placeholder="username"
+                                name="name"
+                                id="name"
+                                value={name}
+                                onChange={onInputChange}
+                                autoComplete="off"
+                                required
+                            />
                         </div>
                         <div className="input-box">
-                            <input type="text" placeholder="rol de usuario" name='role' id='role' value={role} onChange={onInputChange} autoComplete="off" required />
+                            <input
+                                type="text"
+                                placeholder="rol de usuario"
+                                name="role"
+                                id="role"
+                                value={role}
+                                onChange={onInputChange}
+                                autoComplete="off"
+                                required
+                            />
                         </div>
                         <div className="input-box">
-                            <input type="password" placeholder="password" name='password' id='password' value={password} onChange={onInputChange} autoComplete="off" required />
+                            <input
+                                type="password"
+                                placeholder="password"
+                                name="password"
+                                id="password"
+                                value={password}
+                                onChange={onInputChange}
+                                autoComplete="off"
+                                required
+                            />
                         </div>
-                        <button type="submit" className="btn">
-                            Registrarse
-                        </button>
-                        <div className="register-link">
-                            <p>
-                                ¿Ya tienes una cuenta? <a href="/">Inicia sesión aquí</a>
-                            </p>
-                        </div>
+                            <button type="submit" className="btn">
+                                Registrarse
+                            </button>
                     </form>
                 </div>
             </div>

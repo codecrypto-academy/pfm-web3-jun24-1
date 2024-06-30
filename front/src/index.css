@@ -118,13 +118,21 @@
   font-weight: 100;
 }
 
+.bg-fondo {
+  background: url(./src/img/bg.jpg) no-repeat;
+  background-size: cover;
+}
+
+
 .bg-dash {
-  min-height: 100vh;
+  min-height: 125vh;
   width: 100%;
+  padding-top: 70px;
 }
 
 .title-dashboard {
   text-align: center;
+  color:burlywood ;
 }
 
 #canvas-basic {

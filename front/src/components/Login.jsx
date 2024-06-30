@@ -1,46 +1,69 @@
-import "../index.css";
+import React from "react";
 import { Typewriter } from "react-simple-typewriter";
 import { useForm } from "../hook/useForm";
 import { useNavigate } from "react-router-dom";
+import { ethers } from "ethers";
+import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
 
 export function Login() {
   const navigate = useNavigate();
-
-  const { name, rol, password, onInputChange, onResetForm } = useForm({
+  const { name, password, onInputChange, onResetForm } = useForm({
     name: "",
-    rol: "",
     password: "",
   });
 
-  const onLogin = (e) => {
+  const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Dirección del contrato UserStorage.sol en tu red local
+  const userStorageContract = new ethers.Contract(contractAddress, contractABI.abi, provider);
+
+  const onLogin = async (e) => {
     e.preventDefault();
-  
-    let dashboardRoute = ""; // Ruta por defecto
-    
-    switch (rol) {
-      case "agricultor":
-        dashboardRoute = "/dashboardAgr";
-        break;
-      case "fabricante":
-        dashboardRoute = "/dashboardFabr";
-        break;
-      case "cliente":
-        dashboardRoute = "/dashboardClient";
-        break;
-      default:
-        dashboardRoute = "/dashboard";
+
+    try {
+      const userAddress = await userStorageContract.getUsernameAddress(name);
+      if (userAddress !== ethers.constants.AddressZero) {
+        const [address, username, userRole] = await userStorageContract.login(userAddress, password);
+        if (address === userAddress) {
+          const normalizedRole = userRole.toLowerCase().trim();
+          let dashboardRoute = ""; 
+
+          switch (normalizedRole) {
+            case "admin":
+              dashboardRoute = "/register";
+              break;
+            case "fabricante":
+              dashboardRoute = "/dashboardFabrTej";
+              break;
+            case "confeccionista":
+              dashboardRoute = "/dashboardConfec";
+              break;
+            case "cliente":
+              dashboardRoute = "/dashboardClient";
+              break;
+            default:
+              dashboardRoute = "/dashboard";
+          }
+
+          navigate(dashboardRoute, {
+            replace: true,
+            state: {
+              logged: true,
+              name,
+              rol: normalizedRole // Guardamos el rol normalizado en minúsculas y sin espacios adicionales
+            },
+          });
+
+          onResetForm();
+        } else {
+          alert("Contraseña incorrecta. Por favor, inténtalo de nuevo.");
+        }
+      } else {
+        alert("Usuario no encontrado. Por favor, verifica tus credenciales.");
+      }
+    } catch (error) {
+      console.error("Error al verificar usuario:", error);
+      alert("Ocurrió un error al verificar el usuario. Por favor, inténtalo de nuevo.");
     }
-  
-    navigate(dashboardRoute, {
-      replace: true,
-      state: {
-        logged: true,
-        name,
-        rol
-      },
-    });
-    
-    onResetForm();
   };
 
   return (
@@ -52,11 +75,11 @@ export function Login() {
             <span className="spanTypewritter">
               <Typewriter
                 words={[
-                  " agricultor",
-                  " ganadero",
+                  " fabricante",
+                  " confeccionista",
                   " comerciante",
                   " emprendedor",
-                  " artesano",
+                  " cliente",
                   " diseñador/a de moda",
                   " escritor",
                 ]}
@@ -73,8 +96,7 @@ export function Login() {
         </div>
         <div>
           <p className="fixed-text">
-            Compra y vende fácilmente con un solo click <br /> Sin
-            intermediarios
+            Compra y vende fácilmente con un solo click <br /> Sin intermediarios
           </p>
         </div>
       </div>
@@ -96,18 +118,6 @@ export function Login() {
             </div>
             <div className="input-box">
               <input
-                type="text"
-                placeholder="rol"
-                name="rol"
-                id="rol"
-                value={rol}
-                onChange={onInputChange}
-                autoComplete="off"
-                required
-              />
-            </div>
-            <div className="input-box">
-              <input
                 type="password"
                 placeholder="password"
                 name="password"
@@ -121,11 +131,6 @@ export function Login() {
             <button type="submit" className="btn">
               Log in
             </button>
-            <div className="register-link">
-              <p>
-                ¿No tienes una cuenta? <a href="/register">Regístrate aquí</a>
-              </p>
-            </div>
           </form>
         </div>
       </div>

@@ -1,13 +1,12 @@
-require("@nomicfoundation/hardhat-toolbox");
-require('dotenv').config();
+// hardhat.config.js
+require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-ethers");
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.20",
+  solidity: "0.8.19",
   networks: {
-    sepolia: {
-      url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-      accounts: [`0x${process.env.PRIVATE_KEY}`]
+    hardhat: {
+      chainId: 1337 // Identificador de la red local de Hardhat
     }
   }
 };

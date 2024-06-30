@@ -40,12 +40,6 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <a className="nav-item nav-link active" href="/">
-                  Inicia sesión
-                </a>
-                <a className="nav-item nav-link active" href="/register">
-                  Regístrate
-                </a>
               </>
             )}
           </div>
