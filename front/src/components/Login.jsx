@@ -13,20 +13,24 @@ export function Login() {
   });
 
   const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Dirección del contrato UserStorage.sol en tu red local
+  const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Dirección del contrato UserStorage.sol en tu red local
   const userStorageContract = new ethers.Contract(contractAddress, contractABI.abi, provider);
 
   const onLogin = async (e) => {
+    //Evitamos que se recarge la pagina
     e.preventDefault();
 
     try {
+      //Obtenemos la direccion del usuario
       const userAddress = await userStorageContract.getUsernameAddress(name);
       if (userAddress !== ethers.constants.AddressZero) {
+        //Si la direccion es valida hacemos el login
         const [address, username, userRole] = await userStorageContract.login(userAddress, password);
         if (address === userAddress) {
           const normalizedRole = userRole.toLowerCase().trim();
           let dashboardRoute = ""; 
 
+          //Redireccionamos segun el rol
           switch (normalizedRole) {
             case "admin":
               dashboardRoute = "/register";

@@ -1,9 +1,9 @@
 import { Typewriter } from 'react-simple-typewriter';
 import { useForm } from '../hook/useForm';
 import { ethers } from 'ethers';
-import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json'; // Ajusta la ruta según donde tengas el archivo JSON
+import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
 
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Reemplaza con la dirección del contrato en tu red local
+const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 
 
 export function Register() {
@@ -14,16 +14,19 @@ export function Register() {
         password: "",
     });
 
-    const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545"); // Configura el proveedor para la red local de Hardhat
-    const signer = provider.getSigner(); // Obtén el signer (cuenta) para enviar transacciones
+    //Proveedor
+    const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545"); 
+    //Obtenemos la cuenta
+    const signer = provider.getSigner(); 
 
+    //Instancia del contrato
     const userStorageContract = new ethers.Contract(contractAddress, contractABI.abi, signer);
 
     const onRegister = async (e) => {
         e.preventDefault();
 
         try {
-            // Envía la transacción al contrato para registrar un usuario
+            // Envia la transaccion al contrato para registrar un usuario
             const tx = await userStorageContract.registerUser(
                 address,
                 name,
@@ -31,11 +34,12 @@ export function Register() {
                 password
             );
 
-            // Espera a que la transacción se confirme
+            // Se espera a que la transacción se confirme
             await tx.wait();
 
             console.log("Usuario registrado en la blockchain");
-            onResetForm();// Redirigir al dashboard después del registro
+            //Reset del formulario
+            onResetForm();
         } catch (error) {
             console.error("Error al registrar usuario:", error);
         }
@@ -50,13 +54,13 @@ export function Register() {
                         <span className="spanTypewritter">
                             <Typewriter
                                 words={[
-                                    ' agricultor',
-                                    ' ganadero',
-                                    ' comerciante',
-                                    ' emprendedor',
-                                    ' artesano',
-                                    ' diseñador/a de moda',
-                                    ' escritor',
+                                    " fabricante",
+                                    " confeccionista",
+                                    " comerciante",
+                                    " emprendedor",
+                                    " cliente",
+                                    " diseñador/a de moda",
+                                    " escritor",
                                 ]}
                                 loop={true}
                                 cursor

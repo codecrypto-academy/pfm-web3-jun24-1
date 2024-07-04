@@ -1,51 +1,39 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import productManagerArtifact from "../../../artifacts/contracts/ProductManager.sol/ProductManager.json";
+import supplyChainArtifact from "../../../artifacts/contracts/SupplyChain.sol/SupplyChain.json";
 
-// Dirección del contrato ProductManager en la red local de Hardhat
-const productManagerAddress = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
+const supplyChainAddress = "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f";
+const Material = ["Algodón", "Seda", "Lino"];
 
 export function DashboardAgr() {
-  //Para almacenar el indice de la fila seleccionada de la tabla productos
   const [selectedRow, setSelectedRow] = useState(null);
-  //Nombre y cantidad del producto
-  const [nombreProducto, setNombreProducto] = useState("");
-  const [cantidad, setCantidad] = useState("");
-  //Proveedor de ethers y el objeto Signer para interactuar con la blockchain.
+  const [materialIndex, setMaterialIndex] = useState(""); // Índice del material seleccionado
+  const [cantidadKg, setCantidadKg] = useState(""); // Cantidad en kilogramos
+  const [precioEth, setPrecioEth] = useState(""); // Precio en ETH
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
-  //Almacenar la instancia del contrato
-  const [productManagerContract, setProductManagerContract] = useState(null);
-  //Lista de productos
+  const [supplyChainContract, setSupplyChainContract] = useState(null);
   const [productos, setProductos] = useState([]);
-  //Mensajes de error
   const [errorMessage, setErrorMessage] = useState("");
 
-  //Cuando se selecciona una fila en la tabla de productos 
-  //actualiza el estado selectedRow con el índice de la fila seleccionada.
   const handleRowSelection = (index) => {
     setSelectedRow(index);
   };
 
-  //conexión con MetaMask y el contrato ProductManager.
   const initializeEthers = async () => {
-    //Verificamos si Metamask está disponible
     if (typeof window.ethereum !== "undefined") {
       try {
-        //Proveedor
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
-        //Objeto signer para firmar transacciones
         const signer = provider.getSigner();
-        //Instancia del contrato ProductManager
-        const productManagerContract = new ethers.Contract(
-          productManagerAddress,
-          productManagerArtifact.abi,
+        const supplyChainContract = new ethers.Contract(
+          supplyChainAddress,
+          supplyChainArtifact.abi,
           signer
         );
         setProvider(provider);
         setSigner(signer);
-        setProductManagerContract(productManagerContract);
+        setSupplyChainContract(supplyChainContract);
       } catch (error) {
         console.error("Error al inicializar ethers:", error);
         setErrorMessage("Error al inicializar ethers. Asegúrese de que MetaMask esté instalado y conectado.");
@@ -55,37 +43,28 @@ export function DashboardAgr() {
     }
   };
 
-  //Inicializamos ethers una sola vez
   useEffect(() => {
     initializeEthers();
   }, []);
 
-  //Cargar productos y actualizar el estado
   const loadProductos = async () => {
-    //Comprobamos que productManagerContract está definido
-    if (productManagerContract) {
+    if (supplyChainContract && signer) {
       try {
-        // Obtener tokens del usuario conectado
-        const tokenIds = await productManagerContract.getAllUserTokens(signer.getAddress());
-
-        // Obtener información de cada producto
         const productosArray = [];
+        const manufacturerMaterials = await supplyChainContract.getRawMaterialsByManufacturer(await signer.getAddress());
+        for (let i = 0; i < manufacturerMaterials.length; i++) {
+          const materialId = manufacturerMaterials[i];
+          const [materialType, quantity, productionDate, price, producer] = await supplyChainContract.rawMaterials(materialId);
 
-        //Obtener el nombre y la cantidad de cada producto
-        for (let i = 0; i < tokenIds.length; i++) {
-          const [productName, productQuantity] = await productManagerContract.getProduct(tokenIds[i]);
-          
-          // Convertir productQuantity a un int
-          const parsedQuantity = parseInt(productQuantity);
-
-          //Actualiza el estado productos
           productosArray.push({
-            id: tokenIds[i].toNumber(),  // Convertir tokenId a Number si es necesario
-            nombre: productName,         // Asumiendo que productName es un string
-            cantidad: parsedQuantity,    // Convertir productQuantity al tipo correcto
+            id: materialId.toString(),
+            materialType: materialType,
+            cantidadKg: quantity.toString(), // Mostrar la cantidad exacta como string
+            price: ethers.utils.formatEther(price), // Convertir el precio a Ether y mostrar como string
+            productionDate: new Date(parseInt(productionDate) * 1000).toLocaleString(), // Convertir la fecha UNIX a legible
+            estado: "Estado" // Agregar lógica para obtener el estado del producto si es necesario
           });
         }
-
         setProductos(productosArray);
       } catch (error) {
         console.error("Error al cargar productos:", error);
@@ -94,36 +73,43 @@ export function DashboardAgr() {
     }
   };
 
-  //Se ejecuta cada vez que el signer cambia
   useEffect(() => {
     if (signer) {
-      //Actualiza la lista de productos
       loadProductos();
     }
-  }, [signer]); // Cargar productos cuando el signer cambie
+  }, [signer]);
 
-  const handleMint = async (event) => {
+  const handleAddMaterial = async (event) => {
     event.preventDefault();
-    //Valores válidos
-    if (!nombreProducto || !cantidad) {
-      alert("Por favor complete todos los campos.");
+    if (materialIndex === "" || cantidadKg === "" || precioEth === "") {
+      setErrorMessage("Por favor complete todos los campos.");
       return;
     }
-    if (productManagerContract) {
+    if (supplyChainContract) {
       try {
-        // Añadir el prducto
-        const tx = await productManagerContract.addProduct(nombreProducto, cantidad);
+        console.log(`Añadiendo material: ${Material[materialIndex]}, cantidad: ${cantidadKg} kg, precio: ${precioEth} ETH`);
+
+        const cantidadEnUnidades = ethers.utils.parseUnits(cantidadKg.toString(), 'wei'); // Convertir cantidad a unidades (wei)
+
+        const precioEnWei = ethers.utils.parseUnits(precioEth.toString(), 'ether'); // Convertir precio a wei
+
+        const tx = await supplyChainContract.produceRawMaterial(
+          materialIndex,
+          cantidadEnUnidades,
+          precioEnWei,
+          {
+            gasLimit: 300000, // Ajustar el límite de gas según sea necesario
+          }
+        );
         await tx.wait();
-        alert("Producto minteado exitosamente");
-        
-        // Recargar la lista de productos después de agregar uno nuevo
-        await loadProductos();
+        alert("Material añadido exitosamente");
+        await loadProductos(); // Volver a cargar productos después de agregar uno nuevo
       } catch (error) {
-        console.error("Error al mintear producto:", error);
-        setErrorMessage(`Error al mintear producto: ${error.message}`);
+        console.error("Error al añadir material:", error);
+        setErrorMessage(`Error al añadir material: ${error.message}`);
       }
     } else {
-      alert("Contrato no inicializado.");
+      setErrorMessage("Contrato no inicializado.");
     }
   };
 
@@ -131,12 +117,13 @@ export function DashboardAgr() {
     <div className="bg-fondo">
       <div className="bg-dash">
         {errorMessage && (
-          <div className="alert alert-danger" role="alert">
+          <div className="alert alert-danger m-5" role="alert">
             {errorMessage}
           </div>
         )}
+
         <div className="bg-dark rounded p-5 text-white m-5" id="productos">
-          <h1 className="title-dashboard mb-3">PRODUCTOS</h1>
+          <h1 className="title-dashboard mb-3">MATERIALES</h1>
           <div className="">
             <table className="table table-striped table-dark table-bordered">
               <thead>
@@ -145,6 +132,8 @@ export function DashboardAgr() {
                   <th scope="col">Token</th>
                   <th scope="col">Nombre</th>
                   <th scope="col">Kg</th>
+                  <th scope="col">Precio</th>
+                  <th scope="col">Fecha de Creación</th>
                   <th scope="col">Estado</th>
                 </tr>
               </thead>
@@ -154,14 +143,16 @@ export function DashboardAgr() {
                     <td className="m-3">
                       <input
                         type="checkbox"
-                        checked={selectedRow === index + 1}
-                        onChange={() => handleRowSelection(index + 1)}
+                        checked={selectedRow === index}
+                        onChange={() => handleRowSelection(index)}
                       />
                     </td>
                     <td>{producto.id}</td>
-                    <td>{producto.nombre}</td>
-                    <td>{producto.cantidad}</td>
-                    <td>Estado</td> {/* Agrega el estado del producto si es necesario */}
+                    <td>{Material[producto.materialType]}</td>
+                    <td>{producto.cantidadKg}</td> {/* Mostrar la cantidad ingresada seguida de "kg" */}
+                    <td>{producto.price} ETH</td> {/* Mostrar el precio del material */}
+                    <td>{producto.productionDate}</td> {/* Mostrar la fecha de creación del material */}
+                    <td>{producto.estado}</td> {/* Agregar el estado del producto si es necesario */}
                   </tr>
                 ))}
               </tbody>
@@ -170,37 +161,58 @@ export function DashboardAgr() {
         </div>
 
         <div className="bg-dark rounded p-5 text-white m-5" id="mint">
-          <h1 className="title-dashboard mb-3">MINT</h1>
-          <form onSubmit={handleMint}>
+          <h1 className="title-dashboard mb-3">AÑADE TU MATERIAL</h1>
+          <form onSubmit={handleAddMaterial}>
             <div className="row">
               <div className="col">
                 <div className="mb-3">
-                  <label htmlFor="nombreProducto" className="form-label">
-                    Nombre del producto:
+                  <label htmlFor="material" className="form-label">
+                    Material:
+                  </label>
+                  <select
+                    id="material"
+                    className="form-select"
+                    value={materialIndex}
+                    onChange={(e) => setMaterialIndex(parseInt(e.target.value))}
+                  >
+                    <option value="">Seleccionar material</option>
+                    <option value="0">Algodón</option>
+                    <option value="1">Seda</option>
+                    <option value="2">Lino</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="col">
+                <div className="mb-3">
+                  <label htmlFor="cantidadKg" className="form-label">
+                    Cantidad (en kg):
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    step="0.01" // Permitir decimales para kg
                     className="form-control"
-                    id="nombreProducto"
-                    value={nombreProducto}
-                    onChange={(e) => setNombreProducto(e.target.value)}
-                    placeholder="Ingrese el nombre del producto"
+                    id="cantidadKg"
+                    value={cantidadKg}
+                    onChange={(e) => setCantidadKg(e.target.value)}
+                    placeholder="Ingrese la cantidad en kg"
                   />
                 </div>
               </div>
 
               <div className="col">
                 <div className="mb-3">
-                  <label htmlFor="cantidad" className="form-label">
-                    Cantidad:
+                  <label htmlFor="precioEth" className="form-label">
+                    Precio (en ETH):
                   </label>
                   <input
                     type="number"
+                    step="0.0001" // Permitir decimales para ETH
                     className="form-control"
-                    id="cantidad"
-                    value={cantidad}
-                    onChange={(e) => setCantidad(e.target.value)}
-                    placeholder="Ingrese la cantidad (en kg)"
+                    id="precioEth"
+                    value={precioEth}
+                    onChange={(e) => setPrecioEth(e.target.value)}
+                    placeholder="Ingrese el precio en ETH"
                   />
                 </div>
               </div>
@@ -208,22 +220,14 @@ export function DashboardAgr() {
 
             <div className="text-center">
               <button type="submit" className="btn btn-primary">
-                Mintear
+                Añadir Material
               </button>
             </div>
           </form>
-        </div>
-
-        <div className="bg-dark rounded p-5 text-white m-5" id="transferir">
-          <h1 className="title-dashboard mb-3">TRANSFERIR</h1>
-          <div className="mt-3 text-center">
-            <div className="mb-3">
-              <label htmlFor="exampleLabel" className="form-label">Seleccione un token a transferir:</label>
-            </div>
-            <button type="button" className="btn btn-primary">Transferir</button>
-          </div>
         </div>
       </div>
     </div>
   );
 }
+
+export default DashboardAgr;
