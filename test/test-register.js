@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { userStorageAddress } = require('../contractsInfo.json');
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -6,7 +7,7 @@ async function main() {
   console.log("Deploying contracts with the account:", deployer.address);
 
   // Replace with the address of your deployed UserStorage contract
-  const userStorageAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+  // const userStorageAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 
   // Connect to the existing UserStorage contract
   const UserStorage = await ethers.getContractFactory("UserStorage");

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import productManagerArtifact from "../../../artifacts/contracts/ProductManager.sol/ProductManager.json";
+import { productManagerAddress } from "../../../contractsInfo.json";
 
 // Dirección del contrato ProductManager en la red local de Hardhat
-const productManagerAddress = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
+// const productManagerAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
 
 export function DashboardAgr() {
   //Para almacenar el indice de la fila seleccionada de la tabla productos
@@ -161,7 +162,8 @@ export function DashboardAgr() {
                     <td>{producto.id}</td>
                     <td>{producto.nombre}</td>
                     <td>{producto.cantidad}</td>
-                    <td>Estado</td> {/* Agrega el estado del producto si es necesario */}
+                    {/* Agrega el estado del producto si es necesario */}
+                    <td>Estado</td>
                   </tr>
                 ))}
               </tbody>

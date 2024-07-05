@@ -1,14 +1,15 @@
 const { ethers } = require("hardhat");
+const { productManagerAddress } = require('../contractsInfo.json');
 
 async function main() {
-  const productManagerAddress = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
-  const productNFTAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318";
+  // const productManagerAddress = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
+  // const productNFTAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318";
 
   const [deployer] = await ethers.getSigners();
 
   // Attach ProductNFT contract
-  const ProductNFT = await ethers.getContractFactory("ProductNFT");
-  const productNFT = await ProductNFT.attach(productNFTAddress);
+  // const ProductNFT = await ethers.getContractFactory("ProductNFT");
+  // const productNFT = await ProductNFT.attach(productNFTAddress);
 
   // Attach ProductManager contract
   const ProductManager = await ethers.getContractFactory("ProductManager");

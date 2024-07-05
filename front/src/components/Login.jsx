@@ -1,9 +1,9 @@
-import React from "react";
 import { Typewriter } from "react-simple-typewriter";
 import { useForm } from "../hook/useForm";
 import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
+import { userStorageAddress } from '../../../contractsInfo.json';
 
 export function Login() {
   const navigate = useNavigate();
@@ -13,8 +13,9 @@ export function Login() {
   });
 
   const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Dirección del contrato UserStorage.sol en tu red local
-  const userStorageContract = new ethers.Contract(contractAddress, contractABI.abi, provider);
+  // Dirección del contrato UserStorage.sol en tu red local
+  // const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
+  const userStorageContract = new ethers.Contract(userStorageAddress, contractABI.abi, provider);
 
   const onLogin = async (e) => {
     e.preventDefault();
@@ -22,7 +23,7 @@ export function Login() {
     try {
       const userAddress = await userStorageContract.getUsernameAddress(name);
       if (userAddress !== ethers.constants.AddressZero) {
-        const [address, username, userRole] = await userStorageContract.login(userAddress, password);
+        const [address, , userRole] = await userStorageContract.login(userAddress, password);
         if (address === userAddress) {
           const normalizedRole = userRole.toLowerCase().trim();
           let dashboardRoute = ""; 
