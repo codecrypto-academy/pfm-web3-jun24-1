@@ -2,7 +2,7 @@ import { Typewriter } from "react-simple-typewriter";
 import { useForm } from "../hook/useForm";
 import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import contractABI from '../../../artifacts/contracts/ProductManager.sol/UserStorage.json';
+import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
 import { userStorageAddress } from '../../../contractsInfo.json';
 
 export function Login() {

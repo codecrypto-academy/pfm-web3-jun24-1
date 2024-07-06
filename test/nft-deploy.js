@@ -1,22 +1,15 @@
 const { ethers } = require("hardhat");
 const fs = require("fs");
 const path = require("path");
+const { userStorageAddress } = require('../contractsInfo.json');
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-
-  // console.log("Deploying contracts with the account:", deployer.address);
-
-  // // Deploy del contrato ProductNFT
-  // const ProductNFT = await ethers.getContractFactory("ProductNFT");
-  // const productNFT = await ProductNFT.deploy(deployer.address);
-  // await productNFT.deployed();
-
-  // console.log("ProductNFT deployed to:", productNFT.address);
+  console.log("Deploying ProductManager contract with the account:", deployer.address);
 
   // Deploy del contrato ProductManager y le pasamos la dirección de ProductNFT
   const ProductManager = await ethers.getContractFactory("ProductManager");
-  const productManager = await ProductManager.deploy("0x5FbDB2315678afecb367f032d93F642f64180aa3");
+  const productManager = await ProductManager.deploy(userStorageAddress);
   await productManager.deployed();
 
   console.log("ProductManager deployed to:", productManager.address);

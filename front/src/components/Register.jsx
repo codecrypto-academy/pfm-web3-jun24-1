@@ -1,7 +1,7 @@
 import { Typewriter } from 'react-simple-typewriter';
 import { useForm } from '../hook/useForm';
 import { ethers } from 'ethers';
-import contractABI from '../../../artifacts/contracts/ProductManager.sol/UserStorage.json'; // Ajusta la ruta según donde tengas el archivo JSON
+import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json'; // Ajusta la ruta según donde tengas el archivo JSON
 import { userStorageAddress } from '../../../contractsInfo.json';
 
 
