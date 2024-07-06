@@ -1,9 +1,10 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "./UserStorage.sol";
 
 contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     struct Product {
@@ -16,13 +17,28 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     uint256 private productId;
     uint256 private tokenIdCounter;
     address public owner;
+    UserStorage userStorageContract;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "No eres el propietario");
+    modifier onlyManufacturer() {
+        string memory registeredUserRole = userStorageContract.getUserRole(msg.sender);
+        require(compareStrings(registeredUserRole, "Fabricante"), "No eres el fabricante");
         _;
     }
 
-    constructor() ERC721("ProductNFT", "PNFT") {
+    modifier onlyTailor() {
+        string memory registeredUserRole = userStorageContract.getUserRole(msg.sender);
+        require(compareStrings(registeredUserRole, "Confeccionista"), "No eres el confeccionista");
+        _;
+    }
+
+    modifier onlyClient() {
+        string memory registeredUserRole = userStorageContract.getUserRole(msg.sender);
+        require(compareStrings(registeredUserRole, "Cliente"), "No eres el cliente");
+        _;
+    }
+
+    constructor(address _userStorageAddress) ERC721("ProductNFT", "PNFT") {
+        userStorageContract = UserStorage(_userStorageAddress);
         owner = msg.sender; // El deployer de ProductManager se convierte en el owner
     }
 
@@ -35,7 +51,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     function addProduct(
         string memory name,
         uint256 quantity
-    ) external onlyOwner {
+    ) external onlyManufacturer {
         productId++;
         uint256 tokenId = this.mint(msg.sender);
         products[tokenId] = Product(name, quantity);
@@ -73,16 +89,20 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         return tokenIds;
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal virtual override(ERC721, ERC721Enumerable) {
+    function _beforeTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
-     function supportsInterface(bytes4 interfaceId)
+    function supportsInterface(bytes4 interfaceId)
         public
         view
         override(ERC721, ERC721Enumerable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function compareStrings(string memory a, string memory b) public pure returns (bool) {
+        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 }

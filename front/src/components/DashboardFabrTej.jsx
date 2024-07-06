@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import productManagerArtifact from "../../../artifacts/contracts/ProductManager.sol/ProductManager.json";
-import { productManagerAddress } from "../../../contractsInfo.json";
+import { productManagerAddress, userStorageAddress } from "../../../contractsInfo.json";
 
 // Dirección del contrato ProductManager en la red local de Hardhat
 // const productManagerAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
@@ -44,6 +44,10 @@ export function DashboardAgr() {
           productManagerArtifact.abi,
           signer
         );
+
+        /********************** Probar cuando tengamos la instancia del UserStorage en el ProductManager *******************************/
+        // const productManagerFactory = new ethers.ContractFactory(productManagerArtifact.abi, productManagerArtifact.bytecode, signer);
+        // const productManagerContract = await productManagerFactory.deploy(userStorageAddress);
         setProvider(provider);
         setSigner(signer);
         setProductManagerContract(productManagerContract);

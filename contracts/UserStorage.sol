@@ -34,6 +34,11 @@ contract UserStorage {
         _;
     }
 
+    modifier existsUser(address _userAddress) {
+        require(users[_userAddress].exists, "Usuario no encontrado");
+        _;
+    }
+
     constructor() {
         owner = msg.sender;
     }
@@ -61,8 +66,7 @@ contract UserStorage {
         emit UserRegistered(_userAddress, _username);
     }
 
-    function getUser(address _userAddress) public view returns (string memory, string memory) {
-        require(users[_userAddress].exists, "Usuario no encontrado");
+    function getUser(address _userAddress) public view existsUser(_userAddress) returns (string memory, string memory) {
         User memory user = users[_userAddress];
         return (user.username, user.role);
     }
@@ -71,14 +75,12 @@ contract UserStorage {
         return usernames[_username];
     }
 
-    function updateUserRole(address _userAddress, string memory _role) public onlyOwner {
-        require(users[_userAddress].exists, "Usuario no encontrado");
+    function updateUserRole(address _userAddress, string memory _role) public onlyOwner existsUser(_userAddress) {
         users[_userAddress].role = _role;
         emit UserRoleUpdated(_userAddress, _role);
     }
 
-    function deleteUser(address _userAddress) public onlyOwner {
-        require(users[_userAddress].exists, "Usuario no encontrado");
+    function deleteUser(address _userAddress) public onlyOwner existsUser(_userAddress) {
         string memory username = users[_userAddress].username;
         delete usernames[username];
         delete users[_userAddress];
@@ -103,11 +105,14 @@ contract UserStorage {
         return true;
     }
 
-    function login(address _userAddress, string memory _password) public view returns (address, string memory, string memory) {
-        require(users[_userAddress].exists, "Usuario no encontrado");
+    function login(address _userAddress, string memory _password) public view existsUser(_userAddress) returns (address, string memory, string memory) {
         User memory user = users[_userAddress];
         bytes32 passwordHash = keccak256(abi.encodePacked(_password));
         require(user.passwordHash == passwordHash, "Contrasenia incorrecta");
         return (_userAddress, user.username, user.role);
+    }
+
+    function getUserRole(address _userAddress) public view existsUser(_userAddress) returns (string memory) {
+        return users[_userAddress].role;
     }
 }
