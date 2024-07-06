@@ -46,8 +46,8 @@ export function DashboardAgr() {
         );
 
         /********************** Probar cuando tengamos la instancia del UserStorage en el ProductManager *******************************/
-        // const productManagerFactory = new ethers.ContractFactory(productManagerArtifact.abi, productManagerArtifact.bytecode, signer);
-        // const productManagerContract = await productManagerFactory.deploy(userStorageAddress);
+        //const productManagerFactory = new ethers.ContractFactory(productManagerArtifact.abi, productManagerArtifact.bytecode, signer);
+        //const productManagerContract = await productManagerFactory.deploy(userStorageAddress);
         setProvider(provider);
         setSigner(signer);
         setProductManagerContract(productManagerContract);

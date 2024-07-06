@@ -16,7 +16,7 @@ async function main() {
 
   // Deploy del contrato ProductManager y le pasamos la dirección de ProductNFT
   const ProductManager = await ethers.getContractFactory("ProductManager");
-  const productManager = await ProductManager.deploy();
+  const productManager = await ProductManager.deploy("0x5FbDB2315678afecb367f032d93F642f64180aa3");
   await productManager.deployed();
 
   console.log("ProductManager deployed to:", productManager.address);

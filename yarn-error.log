@@ -1,0 +1,40 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Users\Usuario\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js
+
+PATH: 
+  c:\Users\Usuario\AppData\Local\Programs\cursor\resources\app\bin;C:\Program Files (x86)\Razer Chroma SDK\bin;C:\Program Files\Razer Chroma SDK\bin;C:\Program Files (x86)\Razer\ChromaBroadcast\bin;C:\Program Files\Razer\ChromaBroadcast\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\nodejs\;C:\Windows\system32\config\systemprofile\AppData\Local\Microsoft\WindowsApps;C:\Users\Usuario\AppData\Local\Microsoft\WindowsApps;C:\Users\Usuario\AppData\Roaming\npm;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Git\cmd;C:\Program Files\Kubernetes\Minikube;C:\Program Files (x86)\Go\bin;C:\HashiCorp\Vagrant\bin;C:\Users\Usuario\AppData\Roaming\helm;C:\Users\Usuario\.krew\bin;C:\Users\Usuario\AppData\Roaming\istio\bin;C:\Program Files\PuTTY\;C:\Windows\system32\config\systemprofile\AppData\Local\Microsoft\WindowsApps;C:\Users\Usuario\AppData\Roaming\npm;C:\Program Files (x86)\Geth;C:\Program Files\Kubernetes\;c:\Users\Usuario\AppData\Local\Programs\cursor\resources\app\bin;C:\Windows\system32\config\systemprofile\AppData\Local\Microsoft\WindowsApps;C:\Users\Usuario\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\Usuario\AppData\Roaming\npm;C:\Program Files (x86)\Geth;C:\Program Files\Kubernetes\Minikube;C:\Users\Usuario\AppData\Local\Programs\Lens\resources\cli\bin;C:\Users\Usuario\go\bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.16.0
+
+Platform: 
+  win32 x64
+
+Trace: 
+  Error: EPERM: operation not permitted, unlink 'C:\Users\Usuario\Visual_Studio\PFM\project-web3-jun24-1\node_modules\keccak\prebuilds\win32-x64\node.napi.node'
+
+npm manifest: 
+  {
+    "devDependencies": {
+      "@nomiclabs/hardhat-ethers": "^2.2.3",
+      "@nomiclabs/hardhat-waffle": "^2.0.6",
+      "@openzeppelin/contracts": "^4.3.2",
+      "ethers": "^5.7.2",
+      "hardhat": "^2.22.5"
+    },
+    "dependencies": {
+      "dotenv": "^16.4.5",
+      "express": "^4.19.2",
+      "fs": "^0.0.1-security",
+      "path": "^0.12.7"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

@@ -1,9 +1,8 @@
 import { Typewriter } from 'react-simple-typewriter';
 import { useForm } from '../hook/useForm';
 import { ethers } from 'ethers';
-import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json'; // Ajusta la ruta según donde tengas el archivo JSON
-
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Reemplaza con la dirección del contrato en tu red local
+import contractABI from '../../../artifacts/contracts/ProductManager.sol/UserStorage.json'; // Ajusta la ruta según donde tengas el archivo JSON
+import { userStorageAddress } from '../../../contractsInfo.json';
 
 
 export function Register() {
@@ -17,7 +16,7 @@ export function Register() {
     const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545"); // Configura el proveedor para la red local de Hardhat
     const signer = provider.getSigner(); // Obtén el signer (cuenta) para enviar transacciones
 
-    const userStorageContract = new ethers.Contract(contractAddress, contractABI.abi, signer);
+    const userStorageContract = new ethers.Contract(userStorageAddress, contractABI.abi, signer);
 
     const onRegister = async (e) => {
         e.preventDefault();
