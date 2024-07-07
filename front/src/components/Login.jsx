@@ -15,7 +15,7 @@ export function Login() {
   const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
   // Dirección del contrato UserStorage.sol en tu red local
   // const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
-  const userStorageContract = new ethers.Contract(userStorageAddress, contractABI.abi, provider);
+  const userStorageContract = new ethers.Contract(userStorageAddress, contractABI.abi, provider.getSigner());
 
   const onLogin = async (e) => {
     e.preventDefault();
@@ -23,11 +23,13 @@ export function Login() {
     try {
       const userAddress = await userStorageContract.getUsernameAddress(name);
       if (userAddress !== ethers.constants.AddressZero) {
-        const [address, , userRole] = await userStorageContract.login(userAddress, password);
+        await userStorageContract.login(userAddress, password);
+        const [ address, , userRole ] = await userStorageContract.getLoggedUser(userAddress);
+        
         if (address === userAddress) {
           const normalizedRole = userRole.toLowerCase().trim();
           let dashboardRoute = ""; 
-
+          
           switch (normalizedRole) {
             case "admin":
               dashboardRoute = "/register";
@@ -42,7 +44,7 @@ export function Login() {
               dashboardRoute = "/dashboardClient";
               break;
             default:
-              dashboardRoute = "/dashboard";
+              dashboardRoute = "/";
           }
 
           navigate(dashboardRoute, {
@@ -52,7 +54,7 @@ export function Login() {
               name,
               rol: normalizedRole // Guardamos el rol normalizado en minúsculas y sin espacios adicionales
             },
-          });
+          });          
 
           onResetForm();
         } else {

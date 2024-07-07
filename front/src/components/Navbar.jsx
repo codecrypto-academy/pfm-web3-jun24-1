@@ -1,4 +1,7 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { userStorageAddress } from '../../../contractsInfo.json';
+import contractABI from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
+import { ethers } from "ethers";
 
 export function Navbar() {
   const location = useLocation();
@@ -8,10 +11,19 @@ export function Navbar() {
     rol: "",
   };
 
+  const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
+  const userStorageContract = new ethers.Contract(userStorageAddress, contractABI.abi, provider.getSigner());
+  
   const navigate = useNavigate();
-
-  const onLogout = () => {
-    navigate("/", { replace: true });
+  
+  const onLogout = async () => {
+    try {
+      const userAddress = await userStorageContract.getUsernameAddress(name);
+      await userStorageContract.logout(userAddress);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("No se ha podido cerrar sesión", error);
+    }
   };
 
   return (

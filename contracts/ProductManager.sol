@@ -10,6 +10,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     struct Product {
         string name;
         uint256 quantity;
+        address producer;
     }
 
     mapping(uint256 => Product) private products;
@@ -36,6 +37,13 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         require(compareStrings(registeredUserRole, "Cliente"), "No eres el cliente");
         _;
     }
+
+    modifier onlyLoggedUser() {
+        (, , bool logged) = userStorageContract.getUser(msg.sender);
+        require(logged, "Este usuario no ha iniciado sesion");
+        _;
+    }
+
     constructor(address _userStorageAddress) ERC721("ProductNFT", "PNFT") {
         userStorageContract = UserStorage(_userStorageAddress);
         owner = msg.sender; // El deployer de ProductManager se convierte en el owner
@@ -50,10 +58,10 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     function addProduct(
         string memory name,
         uint256 quantity
-    ) external onlyManufacturer {
+    ) external onlyManufacturer onlyLoggedUser {
         productId++;
         uint256 tokenId = this.mint(msg.sender);
-        products[tokenId] = Product(name, quantity);
+        products[tokenId] = Product(name, quantity, msg.sender);
         userProducts[msg.sender].push(tokenId); // Almacenar tokenId del producto para el usuario
     }
 
@@ -64,14 +72,15 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     }
 
     function getProduct(
-        uint256 tokenId
+        uint256 _tokenId,
+        address _userAddress
     ) external view returns (string memory, uint256) {
         require(
-            super.ownerOf(tokenId) == msg.sender,
+            super.ownerOf(_tokenId) == _userAddress,
             "No eres el propietario"
         );
 
-        Product memory product = products[tokenId];
+        Product memory product = products[_tokenId];
         return (product.name, product.quantity);
     }
 

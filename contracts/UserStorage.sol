@@ -7,6 +7,7 @@ contract UserStorage {
         string role;
         bytes32 passwordHash;
         bool exists;
+        bool logged;
     }
 
     struct RegisteredUser {
@@ -35,6 +36,11 @@ contract UserStorage {
         _;
     }
 
+    modifier onlyLoggedUser(address _userAddress) {
+        require(users[_userAddress].logged, "Este usuario no ha iniciado sesion");
+        _;
+    }
+
     constructor() {
         owner = msg.sender;
     }
@@ -48,7 +54,8 @@ contract UserStorage {
             username: _username,
             role: _role,
             passwordHash: keccak256(abi.encodePacked(_password)),
-            exists: true
+            exists: true,
+            logged: false
         });
 
         usernames[_username] = _userAddress;
@@ -62,9 +69,9 @@ contract UserStorage {
         emit UserRegistered(_userAddress, _username);
     }
 
-    function getUser(address _userAddress) public view existsUser(_userAddress) returns (string memory, string memory) {
+    function getUser(address _userAddress) public view existsUser(_userAddress) returns (string memory, string memory, bool) {
         User memory user = users[_userAddress];
-        return (user.username, user.role);
+        return (user.username, user.role, user.logged);
     }
 
     function getUsernameAddress(string memory _username) public view returns (address) {
@@ -101,11 +108,18 @@ contract UserStorage {
         return true;
     }
 
-    function login(address _userAddress, string memory _password) public view existsUser(_userAddress) returns (address, string memory, string memory) {
-        User memory user = users[_userAddress];
+    function login(address _userAddress, string memory _password) public existsUser(_userAddress) {
         bytes32 passwordHash = keccak256(abi.encodePacked(_password));
-        require(user.passwordHash == passwordHash, "Contrasenia incorrecta");
-        return (_userAddress, user.username, user.role);
+        require(users[_userAddress].passwordHash == passwordHash, "Contrasenia incorrecta");
+        users[_userAddress].logged = true;
+    }
+
+    function logout(address _userAddress) public onlyLoggedUser(_userAddress) {        
+        users[_userAddress].logged = false;
+    }
+
+    function getLoggedUser(address _userAddress) public view returns (address, string memory, string memory) {
+        return (_userAddress, users[_userAddress].username, users[_userAddress].role);
     }
 
     function getUserRole(address _userAddress) public view existsUser(_userAddress) returns (string memory) {

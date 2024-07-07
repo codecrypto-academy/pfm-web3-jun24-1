@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { ethers } from "ethers";
 import productManagerArtifact from "../../../artifacts/contracts/ProductManager.sol/ProductManager.json";
+import userStorageArtifact from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
 import { productManagerAddress, userStorageAddress } from "../../../contractsInfo.json";
 
 // Dirección del contrato ProductManager en la red local de Hardhat
@@ -17,10 +19,13 @@ export function DashboardAgr() {
   const [signer, setSigner] = useState(null);
   //Almacenar la instancia del contrato
   const [productManagerContract, setProductManagerContract] = useState(null);
+  const [userStorageContract, setUserStorageContract] = useState(null);
   //Lista de productos
   const [productos, setProductos] = useState([]);
   //Mensajes de error
   const [errorMessage, setErrorMessage] = useState("");
+
+  const { state } = useLocation();
 
   //Cuando se selecciona una fila en la tabla de productos 
   //actualiza el estado selectedRow con el índice de la fila seleccionada.
@@ -45,12 +50,16 @@ export function DashboardAgr() {
           signer
         );
 
-        /********************** Probar cuando tengamos la instancia del UserStorage en el ProductManager *******************************/
-        //const productManagerFactory = new ethers.ContractFactory(productManagerArtifact.abi, productManagerArtifact.bytecode, signer);
-        //const productManagerContract = await productManagerFactory.deploy(userStorageAddress);
+        const userStorageContract = new ethers.Contract(
+          userStorageAddress, 
+          userStorageArtifact.abi, 
+          signer
+        );
+
         setProvider(provider);
         setSigner(signer);
         setProductManagerContract(productManagerContract);
+        setUserStorageContract(userStorageContract);
       } catch (error) {
         console.error("Error al inicializar ethers:", error);
         setErrorMessage("Error al inicializar ethers. Asegúrese de que MetaMask esté instalado y conectado.");
@@ -68,17 +77,18 @@ export function DashboardAgr() {
   //Cargar productos y actualizar el estado
   const loadProductos = async () => {
     //Comprobamos que productManagerContract está definido
-    if (productManagerContract) {
+    if (productManagerContract && userStorageContract) {
       try {
         // Obtener tokens del usuario conectado
-        const tokenIds = await productManagerContract.getAllUserTokens(signer.getAddress());
+        const userAddress = await userStorageContract.getUsernameAddress(state.name);
+        const tokenIds = await productManagerContract.getAllUserTokens(userAddress);
 
         // Obtener información de cada producto
         const productosArray = [];
 
         //Obtener el nombre y la cantidad de cada producto
         for (let i = 0; i < tokenIds.length; i++) {
-          const [productName, productQuantity] = await productManagerContract.getProduct(tokenIds[i]);
+          const [productName, productQuantity] = await productManagerContract.getProduct(tokenIds[i], userAddress);
           
           // Convertir productQuantity a un int
           const parsedQuantity = parseInt(productQuantity);
@@ -101,11 +111,9 @@ export function DashboardAgr() {
 
   //Se ejecuta cada vez que el signer cambia
   useEffect(() => {
-    if (signer) {
       //Actualiza la lista de productos
       loadProductos();
-    }
-  }, [signer]); // Cargar productos cuando el signer cambie
+  }, [productManagerContract, userStorageContract]); // Cargar productos cuando el signer cambie
 
   const handleMint = async (event) => {
     event.preventDefault();

@@ -19,7 +19,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/" element={<Navbar />}>
           <Route index element={<Login />} />
-          <Route path="register" element={<Register />} />
+          <Route path="register" element={<PrivateRoute><Register /></PrivateRoute>} />
           <Route path="dashboardAdmin" element={<PrivateRoute><DashboardAdmin /></PrivateRoute>} />
           <Route path="dashboardFabrTej" element={<PrivateRoute><DashboardAgr /></PrivateRoute>} />
           <Route path="dashboardConfec" element={<PrivateRoute><DashboardFabr /></PrivateRoute>} />

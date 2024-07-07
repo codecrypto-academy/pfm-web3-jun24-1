@@ -32,6 +32,14 @@ async function main() {
   );
   console.log("User registered");
 
+  await userStorage.registerUser(
+    "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "Eva",
+    "Fabricante",
+    "eva"
+  );
+  console.log("User registered");
+
   // Get user data
   const userData1 = await userStorage.getUser("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
   console.log("User data:", userData1);
@@ -39,12 +47,18 @@ async function main() {
   const userData2 = await userStorage.getUser("0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
   console.log("User data:", userData2);
 
+  const userData3 = await userStorage.getUser("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC");
+  console.log("User data:", userData3);
+
   // Login
   const login1 = await userStorage.login("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "natalia");
   console.log("Login data:", login1);
 
   const login2 = await userStorage.login("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "dario");
   console.log("Login data:", login2);
+
+  const login3 = await userStorage.login("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", "eva");
+  console.log("Login data:", login3);
 
   // Get all registered users
   const allUsers = await userStorage.getAllUsers();
