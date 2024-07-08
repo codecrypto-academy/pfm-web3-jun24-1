@@ -7,12 +7,20 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "./UserStorage.sol";
 
 contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
-  
+
   /***************** ESTRUCTURAS Y ENUMS *****************/
   struct Product {
     string name;
     uint256 quantity;
     address producer;
+  }
+
+  struct Garment {
+    string name;
+    uint256 quantity;
+    address producer;
+    uint256 price;
+    bool forSale;
   }
 
   struct TraceabilityRecord {
@@ -35,11 +43,13 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
 
   /***************** VARIABLES *****************/
   mapping(uint256 => Product) private products;
+  mapping(uint256 => Garment) private garments;
   mapping(address => uint256[]) public userProducts; // Mapping para almacenar los tokenIds de un usuario
   mapping(uint256 => TraceabilityRecord[]) public traceabilityRecords;
   mapping(uint256 => uint8) private index;
 
   uint256 private productId;
+  uint256 private garmentId;
   uint256 private tokenIdCounter;
   address public owner;
 
@@ -128,6 +138,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
   function addGarment(
     string memory name,
     uint256 quantity,
+    uint256 price,
     uint256 fromTokenId
   ) external onlyTailor onlyLoggedUser {
 
@@ -146,7 +157,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
 
     _burn(fromTokenId);
 
-    productId++;
+    garmentId++;
     uint256 tokenId = this.mint(msg.sender);
 
     traceabilityRecords[tokenId].push(
@@ -158,7 +169,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         state: State.NEW
       }));
 
-    products[tokenId] = Product(name, quantity, msg.sender);
+    garments[tokenId] = Garment(name, quantity, msg.sender, price, false);
     index[tokenId] = uint8(userProducts[msg.sender].length);
     userProducts[msg.sender].push(tokenId); // Almacenar tokenId del producto para el usuario
   }
@@ -212,12 +223,6 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
       }));
   }
 
-  function getUserProducts(
-    address user
-  ) external view returns (uint256[] memory) {
-    return userProducts[user];
-  }
-
   function getProduct(
     uint256 _tokenId,
     address _userAddress
@@ -229,6 +234,19 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
 
     Product memory product = products[_tokenId];
     return (product.name, product.quantity);
+  }
+
+  function getGarment(
+    uint256 _tokenId,
+    address _userAddress
+  ) external view returns (string memory, uint256, uint256, bool) {
+    require(
+      super.ownerOf(_tokenId) == _userAddress,
+      "No eres el propietario"
+    );
+
+    Garment memory garment = garments[_tokenId];
+    return (garment.name, garment.quantity, garment.price, garment.forSale);
   }
 
   function getAllUserTokens(
