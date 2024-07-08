@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "./UserStorage.sol";
+import "./Utils.sol";
 
 contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
 
@@ -13,14 +14,6 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     string name;
     uint256 quantity;
     address producer;
-  }
-
-  struct Garment {
-    string name;
-    uint256 quantity;
-    address producer;
-    uint256 price;
-    bool forSale;
   }
 
   struct TraceabilityRecord {
@@ -43,13 +36,11 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
 
   /***************** VARIABLES *****************/
   mapping(uint256 => Product) private products;
-  mapping(uint256 => Garment) private garments;
   mapping(address => uint256[]) public userProducts; // Mapping para almacenar los tokenIds de un usuario
   mapping(uint256 => TraceabilityRecord[]) public traceabilityRecords;
-  mapping(uint256 => uint8) private index;
+  mapping(uint256 => uint8) public index;
 
   uint256 private productId;
-  uint256 private garmentId;
   uint256 private tokenIdCounter;
   address public owner;
 
@@ -61,29 +52,18 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
       msg.sender
     );
     require(
-      compareStrings(registeredUserRole, "Fabricante"),
+      Utils.compareStrings(registeredUserRole, "Fabricante"),
       "No eres el fabricante"
     );
     _;
-  }
-
-  modifier onlyTailor() {
-    string memory registeredUserRole = userStorageContract.getUserRole(
-      msg.sender
-    );
-    require(
-      compareStrings(registeredUserRole, "Confeccionista"),
-      "No eres el confeccionista"
-    );
-    _;
-  }
+  }  
 
   modifier onlyClient() {
     string memory registeredUserRole = userStorageContract.getUserRole(
       msg.sender
     );
     require(
-      compareStrings(registeredUserRole, "Cliente"),
+      Utils.compareStrings(registeredUserRole, "Cliente"),
       "No eres el cliente"
     );
     _;
@@ -95,7 +75,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     _;
   }
 
-   modifier onlyTokenOwner(uint256 tokenId) {    
+  modifier onlyTokenOwner(uint256 tokenId) {    
     require (super._ownerOf(tokenId) == msg.sender && traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)].state == State.TRANSFERED, "No eres el propietario del token");
     _;
   }
@@ -135,45 +115,6 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     userProducts[msg.sender].push(tokenId); // Almacenar tokenId del producto para el usuario
   }
 
-  function addGarment(
-    string memory name,
-    uint256 quantity,
-    uint256 price,
-    uint256 fromTokenId
-  ) external onlyTailor onlyLoggedUser {
-
-    require(traceabilityRecords[fromTokenId][getLastTraceabilityRecordIndex(fromTokenId)].state == State.ACCEPTED, "El token tiene que ser aceptado");
-
-    delete userProducts[msg.sender][index[fromTokenId]];
-
-    traceabilityRecords[fromTokenId].push(
-      TraceabilityRecord({
-        createdBy: msg.sender,
-        origin: fromTokenId,
-        quantity: quantity,
-        productName: name,
-        state: State.BURNED
-      }));
-
-    _burn(fromTokenId);
-
-    garmentId++;
-    uint256 tokenId = this.mint(msg.sender);
-
-    traceabilityRecords[tokenId].push(
-      TraceabilityRecord({
-        createdBy: msg.sender,
-        origin: fromTokenId,
-        quantity: quantity,
-        productName: name,
-        state: State.NEW
-      }));
-
-    garments[tokenId] = Garment(name, quantity, msg.sender, price, false);
-    index[tokenId] = uint8(userProducts[msg.sender].length);
-    userProducts[msg.sender].push(tokenId); // Almacenar tokenId del producto para el usuario
-  }
-
   function safeTransferFrom(address to, address from, uint256 tokenId) public virtual override(IERC721, ERC721) {
     _transfer(from, to, tokenId);
     delete userProducts[from][index[tokenId]];
@@ -193,34 +134,6 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         productName: traceabilityRecord.productName,
         state: State.TRANSFERED
       }));
-  } 
-
-  function accept (uint256 tokenId) external onlyTokenOwner(tokenId) {
-    TraceabilityRecord memory traceabilityRecord = traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)];
-
-    traceabilityRecords[tokenId].push(
-      TraceabilityRecord({
-        createdBy: traceabilityRecord.createdBy,
-        origin: traceabilityRecord.origin,
-        quantity: traceabilityRecord.quantity,
-        productName: traceabilityRecord.productName,
-        state: State.ACCEPTED
-      }));
-  }
-
-  function reject (uint256 tokenId) external onlyTokenOwner(tokenId) {
-    safeTransferFrom(traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)].createdBy, msg.sender, tokenId);
-
-    TraceabilityRecord memory traceabilityRecord = traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)];
-
-    traceabilityRecords[tokenId].push(
-      TraceabilityRecord({
-        createdBy: traceabilityRecord.createdBy,
-        origin: traceabilityRecord.origin,
-        quantity: traceabilityRecord.quantity,
-        productName: traceabilityRecord.productName,
-        state: State.REJECTED
-      }));
   }
 
   function getProduct(
@@ -236,22 +149,9 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     return (product.name, product.quantity);
   }
 
-  function getGarment(
-    uint256 _tokenId,
-    address _userAddress
-  ) external view returns (string memory, uint256, uint256, bool) {
-    require(
-      super.ownerOf(_tokenId) == _userAddress,
-      "No eres el propietario"
-    );
-
-    Garment memory garment = garments[_tokenId];
-    return (garment.name, garment.quantity, garment.price, garment.forSale);
-  }
-
   function getAllUserTokens(
     address user
-  ) external view returns (uint256[] memory) {
+  ) public view returns (uint256[] memory) {
     // uint256 tokenCount = super.balanceOf(user);
     // uint256[] memory tokenIds = new uint256[](tokenCount);
 
@@ -262,19 +162,32 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     return userProducts[user];
   }
 
-  function getTokenTraceabilityById(uint256 tokenId) external view returns (TraceabilityRecord[] memory) {
+  function getTokenTraceabilityById(uint256 tokenId) public view returns (TraceabilityRecord[] memory) {
     return traceabilityRecords[tokenId];
-  }
-
-  function compareStrings(
-    string memory a,
-    string memory b
-  ) public pure returns (bool) {
-    return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
   }
 
   function getLastTraceabilityRecordIndex(uint256 tokenId) public view returns (uint256) {      
     return traceabilityRecords[tokenId].length - 1;
+  }
+
+  function deleteUserToken(address user, uint256 tokenId) public {
+    delete userProducts[user][index[tokenId]];
+  }
+
+  function getIndex(uint256 tokenId) public view returns (uint256) {
+    return index[tokenId];
+  }
+
+  function setIndex(uint256 tokenId, address user) public {
+    index[tokenId] = uint8(userProducts[user].length);
+  }
+
+  function addTraceabilityRecord(uint256 tokenId, TraceabilityRecord calldata record) public {
+    traceabilityRecords[tokenId].push(record);
+  }
+
+  function addUserProduct(uint256 tokenId, address user) public {
+    userProducts[user].push(tokenId);
   }
 
   function _beforeTokenTransfer(
