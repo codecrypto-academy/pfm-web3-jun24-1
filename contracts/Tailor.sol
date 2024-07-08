@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "./UserStorage.sol";
 import "./ProductManager.sol";
-import "./Utils.sol";
 
-contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
+contract Tailor {
 
   /***************** ESTRUCTURAS Y ENUMS *****************/
   struct Garment {
@@ -46,11 +42,11 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
 
   modifier onlyTokenOwner(uint256 tokenId) {
     (, , , , ProductManager.State state) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
-    require (ownerOf(tokenId) == msg.sender && state == ProductManager.State.Pendiente, "No eres el propietario del token");
+    require (productManagerContract.ownerOf(tokenId) == msg.sender && state == ProductManager.State.PENDIENTE, "No eres el propietario del token");
     _;
   }
 
-  constructor(address _userStorageAddress, address _productManagerAddress) ERC721("ProductNFT", "PNFT") {
+  constructor(address _userStorageAddress, address _productManagerAddress) {
     userStorageContract = UserStorage(_userStorageAddress);
     productManagerContract = ProductManager(_productManagerAddress);
   }
@@ -63,7 +59,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
   ) external onlyTailor onlyLoggedUser {
 
     (, , , , ProductManager.State state) = productManagerContract.traceabilityRecords(fromTokenId, productManagerContract.getLastTraceabilityRecordIndex(fromTokenId));
-    require(state == ProductManager.State.Aceptado, "El token tiene que ser aceptado");
+    require(state == ProductManager.State.ACEPTADO, "El token tiene que ser aceptado");
 
     productManagerContract.deleteUserToken(msg.sender, fromTokenId);
 
@@ -74,10 +70,10 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: fromTokenId,
         quantity: quantity,
         productName: name,
-        state: ProductManager.State.Eliminado
+        state: ProductManager.State.ELIMINADO
       }));
 
-    _burn(fromTokenId);
+    productManagerContract.burn(fromTokenId);
 
     garmentId++;
     uint256 tokenId = productManagerContract.mint(msg.sender);
@@ -89,7 +85,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: fromTokenId,
         quantity: quantity,
         productName: name,
-        state: ProductManager.State.Eliminado
+        state: ProductManager.State.CREADO
       }));
 
     garments[tokenId] = Garment(name, quantity, msg.sender, price, false);
@@ -97,7 +93,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
     productManagerContract.addUserProduct(tokenId, msg.sender); // Almacenar tokenId del producto para el usuario
   }
 
-  function acceptProduct(uint256 tokenId) external onlyTokenOwner(tokenId) {
+  function accept(uint256 tokenId) external onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
 
     productManagerContract.addTraceabilityRecord(
@@ -107,13 +103,13 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: origin,
         quantity: quantity,
         productName: productName,
-        state: ProductManager.State.Aceptado
+        state: ProductManager.State.ACEPTADO
       }));
   }
 
-  function rejectProduct(uint256 tokenId) external onlyTokenOwner(tokenId) {
+  function reject(uint256 tokenId) external onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
-    safeTransferFrom(createdBy, msg.sender, tokenId);
+    productManagerContract.safeTransferFrom(createdBy, msg.sender, tokenId);
 
     productManagerContract.addTraceabilityRecord(
       tokenId, 
@@ -122,7 +118,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: origin,
         quantity: quantity,
         productName: productName,
-        state: ProductManager.State.Rechazado
+        state: ProductManager.State.RECHAZADO
       }));
   }
 
@@ -131,7 +127,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
     address _userAddress
   ) external view returns (string memory, uint256, uint256, bool) {
     require(
-      super.ownerOf(_tokenId) == _userAddress,
+      productManagerContract.ownerOf(_tokenId) == _userAddress,
       "No eres el propietario"
     );
 
@@ -147,30 +143,5 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
 
   function getTokenTraceabilityById(uint256 tokenId) external view returns (ProductManager.TraceabilityRecord[] memory) {
     return productManagerContract.getTokenTraceabilityById(tokenId);
-  }
-
-
-
-
-
-
-
-
-
-
-
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 firstTokenId,
-    uint256 batchSize
-  ) internal override(ERC721, ERC721Enumerable) {
-    super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
-  }
-
-  function supportsInterface(
-    bytes4 interfaceId
-  ) public view override(ERC721, ERC721Enumerable) returns (bool) {
-    return super.supportsInterface(interfaceId);
   }
 }

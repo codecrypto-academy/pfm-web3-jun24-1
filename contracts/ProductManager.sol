@@ -24,15 +24,15 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     State state;
   }
 
-    enum State {
-        Creado,
-        Pendiente,
-        Aceptado,
-        Rechazado,
-        Eliminado,
-        Venta,
-        Comprado
-    }
+  enum State {
+    CREADO,
+    PENDIENTE,
+    ACEPTADO,
+    RECHAZADO,
+    ELIMINADO,
+    VENTA,
+    COMPRADO
+  }
 
   /***************** VARIABLES *****************/
   mapping(uint256 => Product) private products;
@@ -76,7 +76,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
   }
 
   modifier onlyTokenOwner(uint256 tokenId) {    
-    require (super._ownerOf(tokenId) == msg.sender && traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)].state == State.Pendiente, "No eres el propietario del token");
+    require (super._ownerOf(tokenId) == msg.sender && traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)].state == State.PENDIENTE, "No eres el propietario del token");
     _;
   }
 
@@ -107,7 +107,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: tokenId,
         quantity: quantity,
         productName: name,
-        state: State.Creado
+        state: State.CREADO
       }));
 
     products[tokenId] = Product(name, quantity, msg.sender);
@@ -132,53 +132,39 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: traceabilityRecord.origin,
         quantity: traceabilityRecord.quantity,
         productName: traceabilityRecord.productName,
-        state: State.Pendiente
+        state: State.PENDIENTE
       }));
   }
 
-    function getProduct(
-        uint256 _tokenId,
-        address _userAddress
-    ) external view returns (string memory, uint256, State) {
-        TraceabilityRecord memory lastRecord = traceabilityRecords[_tokenId][
-            getLastTraceabilityRecordIndex(_tokenId)
-        ];
+  function burn(uint256 tokenId) public virtual override {
+    _burn(tokenId);
+  }
 
-        // Verifica que el mensaje provenga del propietario o del fabricante y que el estado sea "Pendiente"
-        require(
-            super.ownerOf(_tokenId) == _userAddress ||
-                (msg.sender == super.ownerOf(_tokenId) &&
-                    lastRecord.state == State.Pendiente),
-            "No tienes permiso para ver este token"
-        );
+  function getProduct(
+    uint256 _tokenId,
+    address _userAddress
+  ) external view returns (string memory, uint256) {
+    require(
+      super.ownerOf(_tokenId) == _userAddress,
+      "No eres el propietario"
+    );
 
-        Product memory product = products[_tokenId];
-        State state = lastRecord.state;
-        return (product.name, product.quantity, state);
-    }
+    Product memory product = products[_tokenId];
+    return (product.name, product.quantity);
+  }
 
-function getAllUserTokens(address user) public view returns (uint256[] memory) {
-    uint256[] memory validTokenIds;
-    uint256 validTokenCount = 0;
+  function getAllUserTokens(
+    address user
+  ) public view returns (uint256[] memory) {
+    // uint256 tokenCount = super.balanceOf(user);
+    // uint256[] memory tokenIds = new uint256[](tokenCount);
 
-    uint256[] memory allTokens = userProducts[user];
-    for (uint256 i = 0; i < allTokens.length; i++) {
-        if (allTokens[i] > 0) {
-            validTokenCount++;
-        }
-    }
+    // for (uint256 i = 0; i < tokenCount; i++) {
+    //   tokenIds[i] = super.tokenOfOwnerByIndex(user, i);
+    // }
 
-    validTokenIds = new uint256[](validTokenCount);
-    uint256 idx = 0;
-    for (uint256 i = 0; i < allTokens.length; i++) {
-        if (allTokens[i] > 0) {
-            validTokenIds[idx] = allTokens[i];
-            idx++;
-        }
-    }
-
-    return validTokenIds;
-}
+    return userProducts[user];
+  }
 
   function getTokenTraceabilityById(uint256 tokenId) public view returns (TraceabilityRecord[] memory) {
     return traceabilityRecords[tokenId];
@@ -208,6 +194,9 @@ function getAllUserTokens(address user) public view returns (uint256[] memory) {
     userProducts[user].push(tokenId);
   }
 
+  function getTraceabilityRecord(uint256 _tokenId, uint256 _index) public view returns (TraceabilityRecord memory) {
+    return traceabilityRecords[_tokenId][_index];
+  }
 
 
 
