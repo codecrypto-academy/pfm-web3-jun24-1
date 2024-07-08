@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "./UserStorage.sol";
 import "./ProductManager.sol";
+import "./Utils.sol";
+import "hardhat/console.sol";
 
 contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
 
@@ -45,7 +47,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
 
   modifier onlyTokenOwner(uint256 tokenId) {
     (, , , , ProductManager.State state) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
-    require (ownerOf(tokenId) == msg.sender && state == ProductManager.State.TRANSFERED, "No eres el propietario del token");
+    require (ownerOf(tokenId) == msg.sender && state == ProductManager.State.Pendiente, "No eres el propietario del token");
     _;
   }
 
@@ -62,7 +64,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
   ) external onlyTailor onlyLoggedUser {
 
     (, , , , ProductManager.State state) = productManagerContract.traceabilityRecords(fromTokenId, productManagerContract.getLastTraceabilityRecordIndex(fromTokenId));
-    require(state == ProductManager.State.ACCEPTED, "El token tiene que ser aceptado");
+    require(state == ProductManager.State.Aceptado, "El token tiene que ser aceptado");
 
     productManagerContract.deleteUserToken(msg.sender, fromTokenId);
 
@@ -73,7 +75,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: fromTokenId,
         quantity: quantity,
         productName: name,
-        state: ProductManager.State.BURNED
+        state: ProductManager.State.Eliminado
       }));
 
     _burn(fromTokenId);
@@ -88,7 +90,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: fromTokenId,
         quantity: quantity,
         productName: name,
-        state: ProductManager.State.BURNED
+        state: ProductManager.State.Eliminado
       }));
 
     garments[tokenId] = Garment(name, quantity, msg.sender, price, false);
@@ -96,9 +98,14 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
     productManagerContract.addUserProduct(tokenId, msg.sender); // Almacenar tokenId del producto para el usuario
   }
 
-  function accept(uint256 tokenId) external onlyTokenOwner(tokenId) {
+  function acceptProduct(uint256 tokenId) external onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
 
+console.log(
+        "Created by %s, tokenId %s",
+        createdBy,
+        tokenId
+    );
     productManagerContract.addTraceabilityRecord(
       tokenId, 
       ProductManager.TraceabilityRecord({
@@ -106,11 +113,11 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: origin,
         quantity: quantity,
         productName: productName,
-        state: ProductManager.State.ACCEPTED
+        state: ProductManager.State.Aceptado
       }));
   }
 
-  function reject(uint256 tokenId) external onlyTokenOwner(tokenId) {
+  function rejectProduct(uint256 tokenId) external onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
     safeTransferFrom(createdBy, msg.sender, tokenId);
 
@@ -121,7 +128,7 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: origin,
         quantity: quantity,
         productName: productName,
-        state: ProductManager.State.REJECTED
+        state: ProductManager.State.Rechazado
       }));
   }
 
@@ -147,6 +154,16 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
   function getTokenTraceabilityById(uint256 tokenId) external view returns (ProductManager.TraceabilityRecord[] memory) {
     return productManagerContract.getTokenTraceabilityById(tokenId);
   }
+
+
+
+
+
+
+
+
+
+
 
   function _beforeTokenTransfer(
     address from,

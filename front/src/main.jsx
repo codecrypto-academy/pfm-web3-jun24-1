@@ -6,9 +6,9 @@ import { Login } from "./components/Login";
 import { Navbar } from "./components/Navbar";
 import { Register } from "./components/Register";
 import { PrivateRoute } from "./components/PrivateRoute";
-import { DashboardAgr } from "./components/DashboardFabrTej";
+import { DashboardFabrTej } from "./components/DashboardFabrTej";
 import { DashboardAdmin } from "./components/DashboardAdmin";
-import { DashboardFabr } from "./components/DashboardConfec";
+import { DashboardConfec } from "./components/DashboardConfec";
 import { DashboardClient } from "./components/DashboardClient";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -21,8 +21,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route index element={<Login />} />
           <Route path="register" element={<PrivateRoute><Register /></PrivateRoute>} />
           <Route path="dashboardAdmin" element={<PrivateRoute><DashboardAdmin /></PrivateRoute>} />
-          <Route path="dashboardFabrTej" element={<PrivateRoute><DashboardAgr /></PrivateRoute>} />
-          <Route path="dashboardConfec" element={<PrivateRoute><DashboardFabr /></PrivateRoute>} />
+          <Route path="dashboardFabrTej" element={<PrivateRoute><DashboardFabrTej /></PrivateRoute>} />
+          <Route path="dashboardConfec" element={<PrivateRoute><DashboardConfec /></PrivateRoute>} />
           <Route path="dashboardClient" element={<PrivateRoute><DashboardClient /></PrivateRoute>} />
         </Route>
       </Routes>

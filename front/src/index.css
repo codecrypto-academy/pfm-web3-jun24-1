@@ -145,3 +145,42 @@
   bottom: 0;
   left: 0;
 }
+
+/* Estilos para centrar y alinear la tabla */
+/* Estilos para centrar verticalmente el contenido de la tabla */
+.table table {
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  text-align: center;
+  vertical-align: middle !important;
+}
+
+/* Estilos para centrar el botón de Transferir en la tabla */
+.table .btn-transferir {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Estilos para el modal */
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semi-transparente */
+}
+
+.modal-dialog {
+  max-width: 500px; /* Ancho máximo del modal */
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+}

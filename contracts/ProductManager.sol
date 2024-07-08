@@ -24,15 +24,15 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     State state;
   }
 
-  enum State {
-    NEW,
-    TRANSFERED,
-    ACCEPTED,
-    REJECTED,
-    BURNED,
-    ONSALE,
-    PURCHASED
-  }
+    enum State {
+        Creado,
+        Pendiente,
+        Aceptado,
+        Rechazado,
+        Eliminado,
+        Venta,
+        Comprado
+    }
 
   /***************** VARIABLES *****************/
   mapping(uint256 => Product) private products;
@@ -76,7 +76,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
   }
 
   modifier onlyTokenOwner(uint256 tokenId) {    
-    require (super._ownerOf(tokenId) == msg.sender && traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)].state == State.TRANSFERED, "No eres el propietario del token");
+    require (super._ownerOf(tokenId) == msg.sender && traceabilityRecords[tokenId][getLastTraceabilityRecordIndex(tokenId)].state == State.Pendiente, "No eres el propietario del token");
     _;
   }
 
@@ -107,7 +107,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: tokenId,
         quantity: quantity,
         productName: name,
-        state: State.NEW
+        state: State.Creado
       }));
 
     products[tokenId] = Product(name, quantity, msg.sender);
@@ -132,35 +132,53 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
         origin: traceabilityRecord.origin,
         quantity: traceabilityRecord.quantity,
         productName: traceabilityRecord.productName,
-        state: State.TRANSFERED
+        state: State.Pendiente
       }));
   }
 
-  function getProduct(
-    uint256 _tokenId,
-    address _userAddress
-  ) external view returns (string memory, uint256) {
-    require(
-      super.ownerOf(_tokenId) == _userAddress,
-      "No eres el propietario"
-    );
+    function getProduct(
+        uint256 _tokenId,
+        address _userAddress
+    ) external view returns (string memory, uint256, State) {
+        TraceabilityRecord memory lastRecord = traceabilityRecords[_tokenId][
+            getLastTraceabilityRecordIndex(_tokenId)
+        ];
 
-    Product memory product = products[_tokenId];
-    return (product.name, product.quantity);
-  }
+        // Verifica que el mensaje provenga del propietario o del fabricante y que el estado sea "Pendiente"
+        require(
+            super.ownerOf(_tokenId) == _userAddress ||
+                (msg.sender == super.ownerOf(_tokenId) &&
+                    lastRecord.state == State.Pendiente),
+            "No tienes permiso para ver este token"
+        );
 
-  function getAllUserTokens(
-    address user
-  ) public view returns (uint256[] memory) {
-    // uint256 tokenCount = super.balanceOf(user);
-    // uint256[] memory tokenIds = new uint256[](tokenCount);
+        Product memory product = products[_tokenId];
+        State state = lastRecord.state;
+        return (product.name, product.quantity, state);
+    }
 
-    // for (uint256 i = 0; i < tokenCount; i++) {
-    //   tokenIds[i] = super.tokenOfOwnerByIndex(user, i);
-    // }
+function getAllUserTokens(address user) public view returns (uint256[] memory) {
+    uint256[] memory validTokenIds;
+    uint256 validTokenCount = 0;
 
-    return userProducts[user];
-  }
+    uint256[] memory allTokens = userProducts[user];
+    for (uint256 i = 0; i < allTokens.length; i++) {
+        if (allTokens[i] > 0) {
+            validTokenCount++;
+        }
+    }
+
+    validTokenIds = new uint256[](validTokenCount);
+    uint256 idx = 0;
+    for (uint256 i = 0; i < allTokens.length; i++) {
+        if (allTokens[i] > 0) {
+            validTokenIds[idx] = allTokens[i];
+            idx++;
+        }
+    }
+
+    return validTokenIds;
+}
 
   function getTokenTraceabilityById(uint256 tokenId) public view returns (TraceabilityRecord[] memory) {
     return traceabilityRecords[tokenId];
@@ -189,6 +207,16 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
   function addUserProduct(uint256 tokenId, address user) public {
     userProducts[user].push(tokenId);
   }
+
+
+
+
+
+
+
+
+
+
 
   function _beforeTokenTransfer(
     address from,

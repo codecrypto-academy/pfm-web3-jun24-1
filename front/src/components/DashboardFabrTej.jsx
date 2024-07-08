@@ -5,45 +5,26 @@ import productManagerArtifact from "../../../artifacts/contracts/ProductManager.
 import userStorageArtifact from '../../../artifacts/contracts/UserStorage.sol/UserStorage.json';
 import { productManagerAddress, userStorageAddress } from "../../../contractsInfo.json";
 
-// Dirección del contrato ProductManager en la red local de Hardhat
-// const productManagerAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
-
-export function DashboardAgr() {
-  //Para almacenar el indice de la fila seleccionada de la tabla productos
-  const [selectedRow, setSelectedRow] = useState(null);
-  //Nombre y cantidad del producto
+export function DashboardFabrTej() {
   const [nombreProducto, setNombreProducto] = useState("");
   const [cantidad, setCantidad] = useState("");
-  //Proveedor de ethers y el objeto Signer para interactuar con la blockchain.
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
-  //Almacenar la instancia del contrato
   const [productManagerContract, setProductManagerContract] = useState(null);
   const [userStorageContract, setUserStorageContract] = useState(null);
-  //Lista de productos
   const [productos, setProductos] = useState([]);
-  //Mensajes de error
   const [errorMessage, setErrorMessage] = useState("");
-
+  const [tailorAddress, setTailorAddress] = useState("");
+  const [showModal, setShowModal] = useState(false);
   const { state } = useLocation();
+  const [selectedTokenId, setSelectedTokenId] = useState(null); // Estado para almacenar el tokenId seleccionado
 
-  //Cuando se selecciona una fila en la tabla de productos 
-  //actualiza el estado selectedRow con el índice de la fila seleccionada.
-  const handleRowSelection = (index) => {
-    setSelectedRow(index);
-  };
-
-  //conexión con MetaMask y el contrato ProductManager.
   const initializeEthers = async () => {
-    //Verificamos si Metamask está disponible
     if (typeof window.ethereum !== "undefined") {
       try {
-        //Proveedor
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
-        //Objeto signer para firmar transacciones
         const signer = provider.getSigner();
-        //Instancia del contrato ProductManager
         const productManagerContract = new ethers.Contract(
           productManagerAddress,
           productManagerArtifact.abi,
@@ -69,35 +50,51 @@ export function DashboardAgr() {
     }
   };
 
-  //Inicializamos ethers una sola vez
   useEffect(() => {
     initializeEthers();
   }, []);
 
-  //Cargar productos y actualizar el estado
   const loadProductos = async () => {
-    //Comprobamos que productManagerContract está definido
     if (productManagerContract && userStorageContract) {
       try {
-        // Obtener tokens del usuario conectado
         const userAddress = await userStorageContract.getUsernameAddress(state.name);
         const tokenIds = await productManagerContract.getAllUserTokens(userAddress);
 
-        // Obtener información de cada producto
         const productosArray = [];
 
-        //Obtener el nombre y la cantidad de cada producto
         for (let i = 0; i < tokenIds.length; i++) {
-          const [productName, productQuantity] = await productManagerContract.getProduct(tokenIds[i], userAddress);
-          
-          // Convertir productQuantity a un int
+          const [productName, productQuantity, productState] = await productManagerContract.getProduct(tokenIds[i], userAddress);
           const parsedQuantity = parseInt(productQuantity);
 
-          //Actualiza el estado productos
+          let estadoTexto = "";
+          switch (productState) {
+            case 0:
+              estadoTexto = "Creado";
+              break;
+            case 1:
+              estadoTexto = "Pendiente";
+              break;
+            case 2:
+              estadoTexto = "Aceptado";
+              break;
+            case 3:
+              estadoTexto = "Rechazado";
+              break;
+            case 4:
+              estadoTexto = "Venta";
+              break;
+            case 5:
+              estadoTexto = "Comprado";
+              break;
+            default:
+              estadoTexto = "Desconocido";
+          }
+
           productosArray.push({
-            id: tokenIds[i].toNumber(),  // Convertir tokenId a Number si es necesario
-            nombre: productName,         // Asumiendo que productName es un string
-            cantidad: parsedQuantity,    // Convertir productQuantity al tipo correcto
+            id: tokenIds[i].toNumber(),
+            nombre: productName,
+            cantidad: parsedQuantity,
+            estado: estadoTexto
           });
         }
 
@@ -109,31 +106,47 @@ export function DashboardAgr() {
     }
   };
 
-  //Se ejecuta cada vez que el signer cambia
   useEffect(() => {
-      //Actualiza la lista de productos
-      loadProductos();
-  }, [productManagerContract, userStorageContract]); // Cargar productos cuando el signer cambie
+    loadProductos();
+  }, [productManagerContract, userStorageContract]);
 
   const handleMint = async (event) => {
     event.preventDefault();
-    //Valores válidos
     if (!nombreProducto || !cantidad) {
       alert("Por favor complete todos los campos.");
       return;
     }
     if (productManagerContract) {
       try {
-        // Añadir el prducto
         const tx = await productManagerContract.addProduct(nombreProducto, cantidad);
         await tx.wait();
         alert("Producto minteado exitosamente");
-        
-        // Recargar la lista de productos después de agregar uno nuevo
         await loadProductos();
       } catch (error) {
         console.error("Error al mintear producto:", error);
         setErrorMessage(`Error al mintear producto: ${error.message}`);
+      }
+    } else {
+      alert("Contrato no inicializado.");
+    }
+  };
+
+  const handleTransferir = async () => {
+    if (!selectedTokenId || !tailorAddress) {
+      alert("Por favor seleccione un producto y especifique la dirección del confeccionista.");
+      return;
+    }
+    if (productManagerContract) {
+      try {
+        const tokenIdToTransfer = selectedTokenId;
+        const tx = await productManagerContract.transferToTailor(tailorAddress, tokenIdToTransfer);
+        await tx.wait();
+        alert(`Producto transferido al confeccionista ${tailorAddress}`);
+        setShowModal(false);
+        await loadProductos();
+      } catch (error) {
+        console.error("Error al transferir producto:", error);
+        setErrorMessage(`Error al transferir producto: ${error.message}`);
       }
     } else {
       alert("Contrato no inicializado.");
@@ -154,28 +167,31 @@ export function DashboardAgr() {
             <table className="table table-striped table-dark table-bordered">
               <thead>
                 <tr>
-                  <th scope="col">Select</th>
                   <th scope="col">Token</th>
                   <th scope="col">Nombre</th>
-                  <th scope="col">Kg</th>
+                  <th scope="col">m/2</th>
                   <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {productos.map((producto, index) => (
                   <tr key={producto.id}>
-                    <td className="m-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedRow === index + 1}
-                        onChange={() => handleRowSelection(index + 1)}
-                      />
-                    </td>
                     <td>{producto.id}</td>
                     <td>{producto.nombre}</td>
                     <td>{producto.cantidad}</td>
-                    {/* Agrega el estado del producto si es necesario */}
-                    <td>Estado</td>
+                    <td>{producto.estado}</td>
+                    <td>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setSelectedTokenId(producto.id); // Al hacer clic, selecciona este tokenId
+                          setShowModal(true);
+                        }}
+                      >
+                        Transferir
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -206,7 +222,7 @@ export function DashboardAgr() {
               <div className="col">
                 <div className="mb-3">
                   <label htmlFor="cantidad" className="form-label">
-                    Cantidad:
+                    Cantidad (en m/2):
                   </label>
                   <input
                     type="number"
@@ -228,15 +244,50 @@ export function DashboardAgr() {
           </form>
         </div>
 
-        <div className="bg-dark rounded p-5 text-white m-5" id="transferir">
-          <h1 className="title-dashboard mb-3">TRANSFERIR</h1>
-          <div className="mt-3 text-center">
-            <div className="mb-3">
-              <label htmlFor="exampleLabel" className="form-label">Seleccione un token a transferir:</label>
+        {showModal && (
+          <div className="modal" style={{ display: "block" }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Transferir Producto</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => setShowModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label htmlFor="tailorAddress" className="form-label">
+                      Indique la cuenta del confeccionista:
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="tailorAddress"
+                      value={tailorAddress}
+                      onChange={(e) => setTailorAddress(e.target.value)}
+                      placeholder="Ingrese la dirección del confeccionista"
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={handleTransferir}>
+                    Transferir
+                  </button>
+                </div>
+              </div>
             </div>
-            <button type="button" className="btn btn-primary">Transferir</button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
