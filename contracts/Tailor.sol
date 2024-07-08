@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "./UserStorage.sol";
 import "./ProductManager.sol";
 import "./Utils.sol";
-import "hardhat/console.sol";
 
 contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
 
@@ -101,11 +100,6 @@ contract Tailor is ERC721, ERC721Enumerable, ERC721Burnable {
   function acceptProduct(uint256 tokenId) external onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
 
-console.log(
-        "Created by %s, tokenId %s",
-        createdBy,
-        tokenId
-    );
     productManagerContract.addTraceabilityRecord(
       tokenId, 
       ProductManager.TraceabilityRecord({
