@@ -134,18 +134,26 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     _burn(tokenId);
   }
 
-  function getProduct(
-    uint256 _tokenId,
-    address _userAddress
-  ) external view returns (string memory, uint256) {
-    require(
-      super.ownerOf(_tokenId) == _userAddress,
-      "No eres el propietario"
-    );
+    function getProduct(
+        uint256 _tokenId,
+        address _userAddress
+    ) external view returns (string memory, uint256, State) {
+        TraceabilityRecord memory lastRecord = traceabilityRecords[_tokenId][
+            getLastTraceabilityRecordIndex(_tokenId)
+        ];
 
-    Product memory product = products[_tokenId];
-    return (product.name, product.quantity);
-  }
+        // Verifica que el mensaje provenga del propietario o del fabricante y que el estado sea "Pendiente"
+        require(
+            super.ownerOf(_tokenId) == _userAddress ||
+                (msg.sender == super.ownerOf(_tokenId) &&
+                    lastRecord.state == State.PENDIENTE),
+            "No tienes permiso para ver este token"
+        );
+
+        Product memory product = products[_tokenId];
+        State state = lastRecord.state;
+        return (product.name, product.quantity, state);
+    }
 
   function getAllUserTokens(
     address user

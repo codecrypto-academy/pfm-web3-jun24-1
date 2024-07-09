@@ -150,7 +150,7 @@ contract Tailor {
       }));
   }
 
-  function accept(uint256 tokenId) external onlyLoggedUser onlyTokenOwner(tokenId) {
+  function acceptProduct(uint256 tokenId) external onlyLoggedUser onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
 
     productManagerContract.addTraceabilityRecord(
@@ -164,7 +164,7 @@ contract Tailor {
       }));
   }
 
-  function reject(uint256 tokenId) external onlyLoggedUser onlyTokenOwner(tokenId) {
+  function rejectProduct(uint256 tokenId) external onlyLoggedUser onlyTokenOwner(tokenId) {
     (address createdBy, uint256 origin, uint256 quantity, string memory productName, ) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
     productManagerContract.safeTransferFrom(createdBy, msg.sender, tokenId);
 

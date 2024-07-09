@@ -63,39 +63,42 @@ export function DashboardFabrTej() {
         const productosArray = [];
 
         for (let i = 0; i < tokenIds.length; i++) {
-          const [productName, productQuantity, productState] = await productManagerContract.getProduct(tokenIds[i], userAddress);
-          const parsedQuantity = parseInt(productQuantity);
+          const tokenId = tokenIds[i].toNumber();
+          if (tokenId > 0) {
+            const [productName, productQuantity, productState] = await productManagerContract.getProduct(tokenIds[i], userAddress);
+            const parsedQuantity = parseInt(productQuantity);
 
-          let estadoTexto = "";
-          switch (productState) {
-            case 0:
-              estadoTexto = "Creado";
-              break;
-            case 1:
-              estadoTexto = "Pendiente";
-              break;
-            case 2:
-              estadoTexto = "Aceptado";
-              break;
-            case 3:
-              estadoTexto = "Rechazado";
-              break;
-            case 4:
-              estadoTexto = "Venta";
-              break;
-            case 5:
-              estadoTexto = "Comprado";
-              break;
-            default:
-              estadoTexto = "Desconocido";
+            let estadoTexto = "";
+            switch (productState) {
+              case 0:
+                estadoTexto = "Creado";
+                break;
+              case 1:
+                estadoTexto = "Pendiente";
+                break;
+              case 2:
+                estadoTexto = "Aceptado";
+                break;
+              case 3:
+                estadoTexto = "Rechazado";
+                break;
+              case 4:
+                estadoTexto = "Venta";
+                break;
+              case 5:
+                estadoTexto = "Comprado";
+                break;
+              default:
+                estadoTexto = "Desconocido";
+            }
+
+            productosArray.push({
+              id: tokenId,
+              nombre: productName,
+              cantidad: parsedQuantity,
+              estado: estadoTexto
+            });
           }
-
-          productosArray.push({
-            id: tokenIds[i].toNumber(),
-            nombre: productName,
-            cantidad: parsedQuantity,
-            estado: estadoTexto
-          });
         }
 
         setProductos(productosArray);
@@ -162,14 +165,14 @@ export function DashboardFabrTej() {
           </div>
         )}
         <div className="bg-dark rounded p-5 text-white m-5" id="productos">
-          <h1 className="title-dashboard mb-3">PRODUCTOS</h1>
+          <h1 className="title-dashboard mb-3">MATERIALES</h1>
           <div className="">
             <table className="table table-striped table-dark table-bordered">
               <thead>
                 <tr>
                   <th scope="col">Token</th>
                   <th scope="col">Nombre</th>
-                  <th scope="col">m/2</th>
+                  <th scope="col">m²</th>
                   <th scope="col">Estado</th>
                   <th scope="col">Acciones</th>
                 </tr>
@@ -206,7 +209,7 @@ export function DashboardFabrTej() {
               <div className="col">
                 <div className="mb-3">
                   <label htmlFor="nombreProducto" className="form-label">
-                    Nombre del producto:
+                    Nombre del material:
                   </label>
                   <input
                     type="text"
@@ -214,7 +217,7 @@ export function DashboardFabrTej() {
                     id="nombreProducto"
                     value={nombreProducto}
                     onChange={(e) => setNombreProducto(e.target.value)}
-                    placeholder="Ingrese el nombre del producto"
+                    placeholder="Ingrese el nombre del material"
                   />
                 </div>
               </div>
@@ -222,7 +225,7 @@ export function DashboardFabrTej() {
               <div className="col">
                 <div className="mb-3">
                   <label htmlFor="cantidad" className="form-label">
-                    Cantidad (en m/2):
+                    Cantidad (en m²):
                   </label>
                   <input
                     type="number"
@@ -230,7 +233,7 @@ export function DashboardFabrTej() {
                     id="cantidad"
                     value={cantidad}
                     onChange={(e) => setCantidad(e.target.value)}
-                    placeholder="Ingrese la cantidad (en kg)"
+                    placeholder="Ingrese la cantidad (en m²)"
                   />
                 </div>
               </div>
