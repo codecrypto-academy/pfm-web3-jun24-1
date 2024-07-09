@@ -37,6 +37,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
   /***************** VARIABLES *****************/
   mapping(uint256 => Product) private products;
   mapping(address => uint256[]) public userProducts; // Mapping para almacenar los tokenIds de un usuario
+  mapping(address => uint256[]) public userProductsForSale; // Mapping para almacenar los tokenIds en venta de un usuario
   mapping(uint256 => TraceabilityRecord[]) public traceabilityRecords;
   mapping(uint256 => uint8) public index;
 
@@ -56,18 +57,7 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
       "No eres el fabricante"
     );
     _;
-  }  
-
-  modifier onlyClient() {
-    string memory registeredUserRole = userStorageContract.getUserRole(
-      msg.sender
-    );
-    require(
-      Utils.compareStrings(registeredUserRole, "Cliente"),
-      "No eres el cliente"
-    );
-    _;
-  }
+  }    
 
   modifier onlyLoggedUser() {
     (, , bool logged) = userStorageContract.getUser(msg.sender);
@@ -117,9 +107,13 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
 
   function safeTransferFrom(address to, address from, uint256 tokenId) public virtual override(IERC721, ERC721) {
     _transfer(from, to, tokenId);
-    delete userProducts[from][index[tokenId]];
+    deleteUserToken(from, tokenId);
     index[tokenId] = uint8(userProducts[to].length);
     userProducts[to].push(tokenId);
+  }
+
+  function transferToken(address to, address from, uint256 tokenId) external {
+    _transfer(from, to, tokenId);
   }
 
   function transferToTailor(address tailor, uint256 tokenId) external onlyManufacturer onlyLoggedUser {
@@ -156,13 +150,6 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
   function getAllUserTokens(
     address user
   ) public view returns (uint256[] memory) {
-    // uint256 tokenCount = super.balanceOf(user);
-    // uint256[] memory tokenIds = new uint256[](tokenCount);
-
-    // for (uint256 i = 0; i < tokenCount; i++) {
-    //   tokenIds[i] = super.tokenOfOwnerByIndex(user, i);
-    // }
-
     return userProducts[user];
   }
 
@@ -198,6 +185,21 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     return traceabilityRecords[_tokenId][_index];
   }
 
+  function addProductForSale(uint256 tokenId, address user) public {
+    deleteUserToken(user, tokenId);
+    index[tokenId] = uint8(userProductsForSale[user].length);
+    userProductsForSale[user].push(tokenId);
+  }
+
+  function deleteProductForSale(uint256 tokenId, address user) public {
+    delete userProductsForSale[user][index[tokenId]];
+    index[tokenId] = uint8(userProducts[user].length);
+    userProducts[user].push(tokenId);
+  }
+
+  function getAllTokensIdsForSale(address user) external view returns (uint256[] memory) {
+    return userProductsForSale[user];
+  }
 
 
 
