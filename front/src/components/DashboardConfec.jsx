@@ -89,9 +89,12 @@ export function DashboardConfec() {
               estadoTexto = "Rechazado";
               break;
             case 4:
-              estadoTexto = "Venta";
+              estadoTexto = "Eliminado";
               break;
             case 5:
+              estadoTexto = "Venta";
+              break;
+            case 6:
               estadoTexto = "Comprado";
               break;
             default:
