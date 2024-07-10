@@ -90,7 +90,7 @@ contract UserStorage {
         emit UserDeleted(_userAddress);
     }
 
-    function getAllUsers() public onlyOwner view returns (RegisteredUser[] memory)  {
+    function getAllUsers() public view returns (RegisteredUser[] memory)  {
         return registeredUsers;
     }
 

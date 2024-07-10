@@ -12,6 +12,7 @@ contract Tailor {
     uint256 quantity;
     address producer;
     uint256 price;
+    uint256 origin;
   }
 
   /***************** VARIABLES *****************/
@@ -98,7 +99,7 @@ contract Tailor {
         state: ProductManager.State.CREADO
       }));
 
-    garments[tokenId] = Garment(name, quantity, msg.sender, price);
+    garments[tokenId] = Garment(name, quantity, msg.sender, price, fromTokenId);
     productManagerContract.setIndex(tokenId, msg.sender);
     productManagerContract.addUserProduct(tokenId, msg.sender); // Almacenar tokenId del producto para el usuario
   }
@@ -121,10 +122,16 @@ contract Tailor {
   }
 
   function buyToken(uint256 tokenId) external payable onlyClient onlyLoggedUser {
-    (address tailorAddress, uint256 origin, uint256 quantity, string memory productName, ProductManager.State state) = productManagerContract.traceabilityRecords(tokenId, productManagerContract.getLastTraceabilityRecordIndex(tokenId));
+    uint256 lastIndex = productManagerContract.getLastTraceabilityRecordIndex(tokenId);
+    require(lastIndex >= 0, "lastIndex es menor que 0");
+
+    (address tailorAddress, uint256 origin, uint256 quantity, string memory productName, ProductManager.State state) = productManagerContract.traceabilityRecords(tokenId, lastIndex);
 
     require(state == ProductManager.State.VENTA, "El token no esta en venta");
     require(msg.value >= garments[tokenId].price, "No dispone de fondos suficientes");
+
+    uint256 lastOriginIndex = productManagerContract.getLastTraceabilityRecordIndex(origin);
+    require(lastOriginIndex >= 0, "lastOriginIndex es menor que 0");
 
     (address manufacturerAddress, , , , ) = productManagerContract.traceabilityRecords(origin, productManagerContract.getLastTraceabilityRecordIndex(origin));
 
@@ -137,7 +144,7 @@ contract Tailor {
     );
 
     productManagerContract.transferToken(msg.sender, tailorAddress, tokenId);
-    productManagerContract.deleteProductForSale(tokenId, msg.sender);
+    productManagerContract.deleteProductForSale(tokenId, tailorAddress, msg.sender);
 
     productManagerContract.addTraceabilityRecord(
       tokenId, 
@@ -182,14 +189,16 @@ contract Tailor {
   function getGarment(
     uint256 _tokenId,
     address _userAddress
-  ) external view returns (string memory, uint256, uint256) {
+  ) external view returns (string memory, uint256, uint256, uint256, ProductManager.State) {
     require(
       productManagerContract.ownerOf(_tokenId) == _userAddress,
       "No eres el propietario"
     );
 
+    (, , , , ProductManager.State state) = productManagerContract.traceabilityRecords(_tokenId, productManagerContract.getLastTraceabilityRecordIndex(_tokenId));
+
     Garment memory garment = garments[_tokenId];
-    return (garment.name, garment.quantity, garment.price);
+    return (garment.name, garment.quantity, garment.price, garment.origin, state);
   }
 
   function getAllUserTokens(

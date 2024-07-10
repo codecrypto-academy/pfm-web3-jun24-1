@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { ethers } from "ethers";
 import productManagerArtifact from "../../../artifacts/contracts/ProductManager.sol/ProductManager.json";
@@ -14,12 +14,10 @@ export function DashboardConfec() {
   const [nombreProductoNuevo, setNombreProductoNuevo] = useState("");
   const [cantidadNuevo, setCantidadNuevo] = useState("");
   const [precioNuevo, setPrecioNuevo] = useState("");
-  const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
   const [productManagerContract, setProductManagerContract] = useState(null);
   const [userStorageContract, setUserStorageContract] = useState(null);
   const [tailorContract, setTailorContract] = useState(null);
-  const [productosCreados, setProductosCreados] = useState([]);
   const [productosNoCreados, setProductosNoCreados] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const { state } = useLocation();
@@ -51,7 +49,6 @@ export function DashboardConfec() {
           signer
         );
 
-        setProvider(provider);
         setSigner(signer);
         setProductManagerContract(productManagerContract);
         setUserStorageContract(userStorageContract);
@@ -104,13 +101,17 @@ export function DashboardConfec() {
                 estadoTexto = "Rechazado";
                 break;
               case 4:
-                estadoTexto = "Venta";
+                estadoTexto = "Eliminado";
                 break;
               case 5:
+                estadoTexto = "En venta";
+                break;
+              case 6:
                 estadoTexto = "Comprado";
                 break;
               default:
                 estadoTexto = "Desconocido";
+                break;
             }
 
             const producto = {
@@ -150,15 +151,15 @@ export function DashboardConfec() {
             const parsedPrice = ethers.utils.formatEther(productPrice);
   
             // Filtrar productos con cantidad o precio igual a 0
-            if (parsedQuantity !== 0 && parseFloat(parsedPrice) !== 0) {
-              const producto = {
+            if (parsedQuantity > 0 && parseFloat(parsedPrice) >= 0) {
+              const garment = {
                 id: tokenId,
                 nombre: productName,
                 cantidad: parsedQuantity,
                 precio: parsedPrice,
               };
   
-              garmentsArray.push(producto);
+              garmentsArray.push(garment);
             }
           }
         }
@@ -330,12 +331,14 @@ export function DashboardConfec() {
                         <>
                           <button
                             className="btn btn-success btn-sm me-2"
+                            disabled={!selectedTokenId}
                             onClick={() => handleAccept(producto.id)}
                           >
                             Aceptar
                           </button>
                           <button
                             className="btn btn-danger btn-sm"
+                            disabled={!selectedTokenId}
                             onClick={() => handleReject(producto.id)}
                           >
                             Rechazar

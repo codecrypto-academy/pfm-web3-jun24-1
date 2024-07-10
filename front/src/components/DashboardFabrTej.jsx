@@ -83,13 +83,17 @@ export function DashboardFabrTej() {
                 estadoTexto = "Rechazado";
                 break;
               case 4:
-                estadoTexto = "Venta";
+                estadoTexto = "Eliminado";
                 break;
               case 5:
+                estadoTexto = "En venta";
+                break;
+              case 6:
                 estadoTexto = "Comprado";
                 break;
               default:
                 estadoTexto = "Desconocido";
+                break;
             }
 
             productosArray.push({

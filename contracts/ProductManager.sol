@@ -199,10 +199,10 @@ contract ProductManager is ERC721, ERC721Enumerable, ERC721Burnable {
     userProductsForSale[user].push(tokenId);
   }
 
-  function deleteProductForSale(uint256 tokenId, address user) public {
-    delete userProductsForSale[user][index[tokenId]];
-    index[tokenId] = uint8(userProducts[user].length);
-    userProducts[user].push(tokenId);
+  function deleteProductForSale(uint256 tokenId, address tailor, address client) public {
+    delete userProductsForSale[tailor][index[tokenId]];
+    index[tokenId] = uint8(userProducts[client].length);
+    userProducts[client].push(tokenId);
   }
 
   function getAllTokensIdsForSale(address user) external view returns (uint256[] memory) {
